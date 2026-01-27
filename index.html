@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Redcliffe Labs | Customer Registration Portal</title>
+    
+    <style>
+        /* Color Variables - Reverted to your original format */
+        :root {
+            --color-primary: #dc2626; 
+            --color-primary-dark: #b91c1c;
+            --color-secondary: #2563eb; 
+            --color-secondary-dark: #1e40af;
+            --color-success: #10b981;
+            --color-error: #ef4444;
+            --bg-gray: #f8fafc;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-gray);
+            margin: 0;
+            padding: 1rem;
+        }
+
+        /* Layout */
+        .container-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 1023px) { 
+            body {
+                padding: 0.5rem; 
+            }
+            .container-wrapper {
+                gap: 1rem; 
+            }
+            .card-modern {
+                padding: 1rem; 
+            }
+            .brand-logo {
+                height: 50px; 
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .container-wrapper {
+                flex-direction: row;
+                align-items: flex-start;
+                padding-top: 2rem;
+            }
+        }
+
+        /* Card Styling */
+        .card-modern {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            flex: 1;
+        }
+        
+        .right-card {
+            width: 100%;
+        }
+        @media (min-width: 1024px) { .right-card { width: 400px; flex: none; } }
+
+        /* Header Logo Section */
+        .header-logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-logo {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* Typography - Reverted to your exact section title format */
+        h1, h2, h3 { color: #1f2937; margin-top: 0; } 
+        .text-subtle { color: #6b7280; font-size: 0.875rem; } 
+        .section-title { 
+            font-size: 0.9rem; 
+            font-weight: 700; 
+            color: #4b5563; 
+            text-transform: uppercase; 
+            border-bottom: 1px solid #e5e7eb; 
+            padding-bottom: 5px; 
+            margin: 1.5rem 0 1rem 0; 
+        } 
+        .section-title:first-child { margin-top: 0; } 
+
+        /* Form Grid - Mobile Optimized to force full-width */
+        .grid-2, .responsive-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        /* MOBILE FIX: Force 1 column for proper mobile view */
+        @media (max-width: 640px) {
+            .grid-2, .grid-3, .responsive-grid-2 { grid-template-columns: 1fr !important; } 
+            .span-2 { grid-column: span 1 !important; }
+        }
+        .span-2 { grid-column: span 2; }
+
+        /* Input Fields */
+        label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 16px; /* Added 16px to prevent auto-zoom on mobile */
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--color-secondary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            background-color: var(--color-primary);
+            color: white;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--color-primary-dark); }
+        .btn-secondary { 
+            width: 100%;
+            background-color: #f3f4f6; 
+            color: #374151; 
+            border: 1px solid #d1d5db; 
+            padding: 0.8rem;
+            border-radius: 0.5rem; 
+            cursor: pointer; 
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-secondary:hover { background-color: #e5e7eb; } 
+        
+        .btn-reset { background-color: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; }
+        
+        .btn-print {
+            background-color: #374151;
+            color: white;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* List Styling */
+        .registration-item {
+            border-left: 4px solid var(--color-primary);
+            background: #fff;
+            margin-bottom: 0.75rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 58mm;
+                padding: 0;
+                margin: 0;
+                background: white;
+                color: black;
+                font-family: monospace;
+            }
+            .no-print { display: none !important; }
+        }
+
+        #receipt-print-area {
+            width: 58mm;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            background: white;
+            font-size: 10px;
+            line-height: 1.2;
+            color: black;
+            font-family: 'Courier New', Courier, monospace;
+            display: none;
+        }
+        .receipt-header { text-align: center; border-bottom: 1px dashed black; padding-bottom: 5px; margin-bottom: 10px; } 
+        .receipt-row { display: flex; justify-content: space-between; margin-bottom: 3px; } 
+        .receipt-footer { text-align: center; border-top: 1px dashed black; margin-top: 10px; padding-top: 5px; font-size: 8px; } 
+        .receipt-id { font-size: 13px; font-weight: bold; text-align: center; margin: 5px 0; border: 1px solid black; padding: 3px; } 
+        
+        .hidden { display: none; }
+        .status-box { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; text-align: center; font-weight: bold; } 
+        .status-success { background: #dcfce7; color: #166534; } 
+        .status-error { background: #fee2e2; color: #991b1b; } 
+        .status-secondary { background: #e0f2fe; color: #075985; }
+    </style>
+</head>
+<body>
+
+    <div id="receipt-print-area"></div>
+
+    <div class="container-wrapper no-print">
+        
+        <!-- Left: Form -->
+        <div class="card-modern">
+            <div class="header-logo-container">
+                <div>
+                    <img src="https://lh3.googleusercontent.com/u/0/d/1rWGnTk485-dqc_ADtLn_RuSmDzgomV0U=w1000-h1000-iv1" 
+                         alt="Redcliffe Labs Logo" 
+                         class="brand-logo"
+                         onerror="this.src='https://via.placeholder.com/200x80?text=Redcliffe+Labs';">
+                    <p class="text-subtle">Customer Registration Portal / ग्राहक पंजीकरण पोर्टल</p>
+                </div>
+            </div>
+
+            <div id="status-message" class="hidden status-box"></div>
+
+            <form id="registration-form" onsubmit="handleRegistration(event)">
+
+                <input type="hidden" id="external-rcl-id" name="external-rcl-id" class="persist">
+
+                <div class="section-title">Pre-Registration Data / पूर्व पंजीकरण डेटा</div>
+                <div class="grid-2">
+                    <div class="span-2">
+                        <input type="file" id="csv-upload" accept=".csv" class="input-field" style="margin-bottom: 0.5rem; border-style: dashed;">
+                        <div id="upload-status" class="text-subtle" style="margin-bottom: 1rem;">Upload CSV file (RCL Booking ID, Emp ID, Name, Age, Gender, Mobile, Email)</div>
+                    </div>
+                </div>
+
+                <div id="customer-select-container" class="hidden" style="margin-bottom: 1rem;">
+                    <label for="pre-select-customer">Select Registered Customer / पंजीकृत ग्राहक चुनें</label>
+                    <select id="pre-select-customer" class="input-field" onchange="populateFormFromSelection()">
+                        <option value="">-- Select Customer / ग्राहक चुनें --</option>
+                    </select>
+                </div>
+
+                <div class="section-title">Customer Details / ग्राहक का विवरण</div>
+                <div class="grid-2">
+                    <div class="span-2">
+                        <label for="full-name">Full Name / पूरा नाम *</label>
+                        <input type="text" id="full-name" name="full-name" required placeholder="Enter full name / पूरा नाम लिखें" class="input-field persist">
+                    </div>
+
+                    <div>
+                        <label for="age">Age / उम्र *</label>
+                        <input type="number" id="age" name="age" required min="0" max="120" placeholder="Age / उम्र" class="input-field persist">
+                    </div>
+
+                    <div>
+                        <label for="gender">Gender / लिंग *</label>
+                        <select id="gender" name="gender" required class="input-field persist">
+                            <option value="" disabled selected>Select / चुनें</option>
+                            <option value="male">Male / पुरुष</option>
+                            <option value="female">Female / महिला</option>
+                            <option value="other">Other / अन्य</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="employee-id">Employee ID / कर्मचारी आईडी</label>
+                        <input type="text" id="employee-id" name="employee-id" placeholder="Optional / वैकल्पिक" class="input-field persist">
+                    </div>
+                    
+                    <div>
+                        <label for="mobile-number">Mobile Number / मोबाइल नंबर *</label>
+                        <input type="tel" id="mobile-number" name="mobile-number" required placeholder="10-digit number / १० अंकों का नंबर" class="input-field persist">
+                    </div>
+
+                    <div>
+                        <label for="email">Email ID / ईमेल आईडी</label>
+                        <input type="email" id="email" name="email" placeholder="example@email.com" class="input-field persist">
+                    </div>
+                    
+                    <div>
+                        <label for="display-rcl-id">RCL Booking ID (Pre-Reg)</label>
+                        <input type="text" id="display-rcl-id" name="display-rcl-id" readonly placeholder="N/A" class="input-field persist" style="background-color: #f9fafb;">
+                    </div>
+
+                    <div class="span-2"> 
+                        <label for="start-date">Collection Date / संग्रह की तारीख</label>
+                        <input type="date" id="start-date" name="start-date" class="input-field persist">
+                    </div>
+
+                    <div class="span-2"> 
+                        <label for="phlebo-name">Phlebotomist Name / फ्लेबो नाम *</label>
+                        <input type="text" id="phlebo-name" name="phlebo-name" required placeholder="Enter phlebotomist name / फ्लेबो का नाम लिखें" class="input-field persist">
+                    </div>
+                </div>
+
+                <!-- VITAL TOGGLE START -->
+                <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 1rem 0;"> 
+                    <span>Vitals / स्वास्थ्य माप</span>
+                    <button type="button" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;" onclick="toggleVitals()" id="vitals-toggle-btn">Record Vitals / माप दर्ज करें</button>
+                </div>
+                
+                <div id="vitals-container" class="hidden">
+                    <div class="grid-3">
+                        <div>
+                            <label for="v-height">Height / ऊंचाई (cm)</label>
+                            <input type="number" id="v-height" name="v-height" placeholder="Height / ऊंचाई" class="input-field persist">
+                        </div>
+                        <div>
+                            <label for="v-weight">Weight / वजन (kg)</label>
+                            <input type="number" step="0.1" id="v-weight" name="v-weight" placeholder="Weight / वजन" class="input-field persist">
+                        </div>
+                        <div>
+                            <label for="v-bp">BP / रक्तचाप (mmHg)</label>
+                            <input type="text" id="v-bp" name="v-bp" placeholder="BP / रक्तचाप" class="input-field persist">
+                        </div>
+                        <div>
+                            <label for="v-pulse">Pulse / नब्ज (bpm)</label>
+                            <input type="number" id="v-pulse" name="v-pulse" placeholder="Pulse / नब्ज" class="input-field persist">
+                        </div>
+                        <div>
+                            <label for="v-spo2">SpO2 / ऑक्सीजन (%)</label>
+                            <input type="number" id="v-spo2" name="v-spo2" placeholder="Oxygen / ऑक्सीजन" class="input-field persist">
+                        </div>
+                        <div>
+                            <label for="v-rbs">RBS / शुगर (mg/dL)</label>
+                            <input type="number" id="v-rbs" name="v-rbs" placeholder="Sugar / शुगर" class="input-field persist">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="span-2" style="margin-top: 1.25rem;">
+                    <label for="remarks">Remarks / टिप्पणी</label>
+                    <textarea id="remarks" name="remarks" rows="3" class="input-field persist" placeholder="Additional notes / अतिरिक्त टिप्पणी..."></textarea>
+                </div>
+
+                <div class="responsive-grid-2" style="margin-top: 2rem; gap: 1rem;">
+                    <button type="button" class="btn-secondary" onclick="clearFormFields(true, true)">Clear Form / फॉर्म साफ करें</button>
+                    <button type="submit" class="btn-primary">Register & Save Locally / पंजीकरण करें और सहेजें</button>
+                </div>
+            </form>
+            
+            <div class="responsive-grid-2" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; gap: 1rem;">
+                <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download CSV / डेटा डाउनलोड करें</button>
+                <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data / डेटा हटाएं</button>
+                <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
+            </div>
+        </div>
+
+        <!-- Right: List -->
+        <div class="card-modern right-card">
+            <h2 style="font-size: 1.25rem; border-bottom: 1px solid #f1f1f1; padding-bottom: 0.75rem; margin-bottom: 1rem;">Registrations / पंजीकरण सूची</h2>
+            <div id="registration-list" style="max-height: 800px; overflow-y: auto;">
+                <p class="text-subtle italic text-center">No data found / कोई डेटा नहीं मिला</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let registrations = [];
+        let preRegisteredCustomers = [];
+        const STORAGE_KEY = 'redcliffe_camp_v1';
+        const DRAFT_KEY = 'redcliffe_draft_v1';
+        const STARTING_NUM = 100001;
+        const ID_PREFIX = 'RCL';
+        const RESET_CODE = 'RCL9799';
+
+        window.onload = () => {
+            loadData();
+            restoreDraft();
+            initializeCustomerUpload();
+            
+            if (!document.getElementById('start-date').value) {
+                document.getElementById('start-date').value = new Date().toISOString().split('T')[0];
+            }
+            
+            if (!document.getElementById('display-rcl-id').value) {
+                document.getElementById('display-rcl-id').value = 'N/A';
+            }
+
+            if (document.getElementById('v-height').value || 
+                document.getElementById('v-weight').value || 
+                document.getElementById('v-bp').value) {
+                
+                const container = document.getElementById('vitals-container');
+                const button = document.getElementById('vitals-toggle-btn');
+                container.classList.remove('hidden');
+                button.textContent = 'Hide Vitals / माप छिपाएँ';
+            }
+
+            const persistInputs = document.querySelectorAll('.persist');
+            persistInputs.forEach(input => {
+                input.addEventListener('input', saveDraft);
+            });
+
+            document.getElementById('mobile-number').addEventListener('blur', (e) => attemptAutoSelectCustomer('mobile', e.target.value));
+            document.getElementById('email').addEventListener('blur', (e) => attemptAutoSelectCustomer('email', e.target.value));
+        };
+
+        function toggleVitals() {
+            const container = document.getElementById('vitals-container');
+            const button = document.getElementById('vitals-toggle-btn');
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                button.textContent = 'Hide Vitals / माप छिपाएँ';
+            } else {
+                container.classList.add('hidden');
+                button.textContent = 'Record Vitals / माप दर्ज करें';
+            }
+        }
+
+        function displayStatus(msg, type) {
+            const el = document.getElementById('status-message');
+            el.textContent = msg;
+            el.className = `status-box status-${type}`;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 4000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function saveDraft() {
+            const draft = {};
+            const persistInputs = document.querySelectorAll('.persist');
+            persistInputs.forEach(input => {
+                draft[input.id] = input.value;
+            });
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+        }
+
+        function restoreDraft() {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (raw) {
+                const draft = JSON.parse(raw);
+                Object.keys(draft).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = draft[id];
+                });
+            }
+        }
+
+        function clearDraft() {
+            localStorage.removeItem(DRAFT_KEY);
+        }
+        
+        /**
+         * Clears form fields and resets local draft state.
+         * @param {boolean} showStatus - Whether to show a success message.
+         * @param {boolean} keepCSV - If true, keeps the uploaded CSV data and customer dropdown visible.
+         */
+        function clearFormFields(showStatus = true, keepCSV = false) {
+            document.getElementById('registration-form').reset();
+            clearDraft();
+            
+            if (!keepCSV) {
+                const csvUpload = document.getElementById('csv-upload');
+                if (csvUpload) csvUpload.value = ''; 
+                
+                preRegisteredCustomers = [];
+                document.getElementById('upload-status').textContent = 'Upload CSV file (RCL Booking ID, Emp ID, Name, Age, Gender, Mobile, Email)';
+                
+                const preSelectContainer = document.getElementById('customer-select-container');
+                if (preSelectContainer) preSelectContainer.classList.add('hidden');
+
+                const preSelect = document.getElementById('pre-select-customer');
+                if (preSelect) {
+                    preSelect.innerHTML = '<option value="">-- Select Customer / ग्राहक चुनें --</option>'; 
+                    preSelect.value = ""; 
+                } 
+            } else {
+                // If we are keeping CSV, just reset the dropdown selection to blank
+                const preSelect = document.getElementById('pre-select-customer');
+                if (preSelect) preSelect.value = "";
+            }
+
+            // Restore defaults that are shared across registrations
+            document.getElementById('start-date').value = new Date().toISOString().split('T')[0];
+            
+            document.getElementById('external-rcl-id').value = ""; 
+            document.getElementById('display-rcl-id').value = "N/A"; 
+            
+            const container = document.getElementById('vitals-container');
+            const button = document.getElementById('vitals-toggle-btn');
+            if (container && button) {
+                container.classList.add('hidden');
+                button.textContent = 'Record Vitals / माप दर्ज करें';
+            }
+
+            if (showStatus) {
+                 displayStatus("Form fields cleared.", "secondary");
+            }
+        }
+
+        function loadData() {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const wrapper = JSON.parse(raw);
+                registrations = wrapper.data || [];
+                document.getElementById('expiration-info').textContent = `Local records / कुल रिकॉर्ड: ${registrations.length}`;
+            }
+            updateUI();
+        }
+
+        function initializeCustomerUpload() {
+            document.getElementById('csv-upload').addEventListener('change', handleFileUpload);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvText = e.target.result;
+                    preRegisteredCustomers = parseCSV(csvText);
+                    
+                    if (preRegisteredCustomers.length > 0) {
+                        updateCustomerSelect(preRegisteredCustomers);
+                        document.getElementById('upload-status').textContent = `${preRegisteredCustomers.length} customers loaded.`
+                        document.getElementById('customer-select-container').classList.remove('hidden');
+                        displayStatus(`Loaded ${preRegisteredCustomers.length} customers.`, 'success');
+                    } else {
+                        displayStatus('CSV empty or wrong format.', 'error');
+                    }
+                } catch (error) {
+                    displayStatus('Error processing CSV.', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split(/\r?\n/);
+            if (lines.length <= 1) return [];
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '')); 
+                if (values.length >= 7) {
+                    data.push({
+                        id: Date.now() + i, 
+                        externalRclId: values[0] || '', 
+                        empId: values[1] || '',
+                        fullName: values[2] || '',
+                        age: values[3] || '',
+                        gender: values[4] ? values[4].toLowerCase() : '',
+                        mobile: values[5] || '',
+                        email: values[6] || ''
+                    });
+                }
+            }
+            return data;
+        }
+
+        function updateCustomerSelect(customers) {
+            const select = document.getElementById('pre-select-customer');
+            select.innerHTML = '<option value="">-- Select Customer / ग्राहक चुनें --</option>';
+            customers.forEach(c => {
+                if (c.fullName) {
+                    const option = document.createElement('option');
+                    option.value = c.id;
+                    let displayId = c.externalRclId ? `RCL: ${c.externalRclId}` : (c.empId ? `Emp: ${c.empId}` : 'N/A');
+                    option.textContent = `${c.fullName} (${displayId})`;
+                    select.appendChild(option);
+                }
+            });
+        }
+
+        function attemptAutoSelectCustomer(type, value) {
+            const normalizedValue = value.trim();
+            if (!normalizedValue) return;
+
+            let foundCustomer = null;
+            let matchKey = '';
+
+            if (type === 'mobile' && normalizedValue.length === 10) {
+                foundCustomer = preRegisteredCustomers.find(c => c.mobile.trim() === normalizedValue);
+                matchKey = 'Mobile';
+            } else if (type === 'email') {
+                const lowerValue = normalizedValue.toLowerCase();
+                foundCustomer = preRegisteredCustomers.find(c => c.email.toLowerCase().trim() === lowerValue);
+                matchKey = 'Email';
+            }
+            
+            const selector = document.getElementById('pre-select-customer');
+            if (foundCustomer) {
+                if (parseInt(selector.value) !== foundCustomer.id) {
+                    selector.value = foundCustomer.id;
+                    populateFormFromSelection(); 
+                    displayStatus(`Matched: ${foundCustomer.fullName}`, 'secondary');
+                }
+            }
+        }
+
+        function populateFormFromSelection() {
+            const selector = document.getElementById('pre-select-customer');
+            const selectedId = parseInt(selector.value);
+            if (!selectedId) {
+                clearFormFields(false, true); // Keep CSV if user just deselects
+                return; 
+            }
+            const customer = preRegisteredCustomers.find(c => c.id === selectedId);
+            if (customer) {
+                clearDraft(); 
+                document.getElementById('full-name').value = customer.fullName || '';
+                document.getElementById('age').value = customer.age || '';
+                let normalizedGender = 'other';
+                if (customer.gender.startsWith('m')) { normalizedGender = 'male'; } 
+                else if (customer.gender.startsWith('f')) { normalizedGender = 'female'; } 
+                document.getElementById('gender').value = normalizedGender;
+                document.getElementById('employee-id').value = customer.empId || '';
+                document.getElementById('mobile-number').value = customer.mobile || '';
+                document.getElementById('email').value = customer.email || '';
+                document.getElementById('external-rcl-id').value = customer.externalRclId || '';
+                document.getElementById('display-rcl-id').value = customer.externalRclId || 'N/A';
+                saveDraft(); 
+            }
+        }
+
+        function handleRegistration(e) {
+            e.preventDefault();
+            const form = e.target;
+            const fd = new FormData(form);
+            const raw = localStorage.getItem(STORAGE_KEY);
+            let nextNum = STARTING_NUM;
+            if (raw) {
+                const wrapper = JSON.parse(raw);
+                nextNum = wrapper.nextNum || STARTING_NUM;
+            }
+            const bookingId = `${ID_PREFIX}${nextNum}`;
+            const entry = {
+                id: Date.now(),
+                bookingId,
+                timestamp: new Date().toLocaleString(),
+                externalRclId: fd.get('external-rcl-id'), 
+                fullName: fd.get('full-name'),
+                age: fd.get('age'),
+                gender: fd.get('gender'),
+                empId: fd.get('employee-id'),
+                mobile: fd.get('mobile-number'),
+                email: fd.get('email'),
+                date: fd.get('start-date'),
+                phleboName: fd.get('phlebo-name'), 
+                remarks: fd.get('remarks'),
+                vitals: {
+                    height: fd.get('v-height'),
+                    weight: fd.get('v-weight'),
+                    bp: fd.get('v-bp'),
+                    pulse: fd.get('v-pulse'),
+                    spo2: fd.get('v-spo2'),
+                    rbs: fd.get('v-rbs')
+                }
+            };
+            registrations.unshift(entry);
+            save(nextNum + 1);
+            
+            // FIX: Call clearFormFields with keepCSV = true to prevent uploaded data from disappearing
+            clearFormFields(false, true);
+            
+            updateUI();
+            displayStatus(`Registered / पंजीकरण सफल: ${bookingId}`, 'success');
+        }
+
+        function save(nextNumOverride) {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            let nextNum = nextNumOverride;
+            if (raw && !nextNumOverride) {
+                const wrapper = JSON.parse(raw);
+                nextNum = wrapper.nextNum;
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                data: registrations,
+                nextNum: nextNum || STARTING_NUM
+            }));
+        }
+
+        function updateUI() {
+            const list = document.getElementById('registration-list');
+            const dlBtn = document.getElementById('download-csv-btn');
+            const rstBtn = document.getElementById('clear-data-btn');
+            document.getElementById('expiration-info').textContent = `Local records / कुल रिकॉर्ड: ${registrations.length}`;
+
+            if (registrations.length === 0) {
+                list.innerHTML = '<p class="text-subtle italic text-center py-4">No data found / कोई डेटा नहीं मिला</p>';
+                dlBtn.disabled = rstBtn.disabled = true;
+                return;
+            }
+
+            dlBtn.disabled = rstBtn.disabled = false;
+            list.innerHTML = registrations.map(reg => `
+                <div class="registration-item">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 800; color: var(--color-primary); font-size: 0.8rem;">${reg.externalRclId || reg.bookingId}</div>
+                        <div style="font-weight: bold; margin: 2px 0;">${reg.fullName}</div>
+                        <div class="text-subtle">${reg.age}Y | ${reg.gender} | ${reg.mobile}</div>
+                    </div>
+                    <div style="text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                        <button onclick="printReceipt(${reg.id})" class="btn-print">
+                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-2 4H8v-4h8v4z"/></svg>
+                            Print / प्रिंट
+                        </button>
+                        <span style="font-size: 0.65rem; color: #9ca3af;">${reg.timestamp.split(',')[1]}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function printReceipt(id) {
+            const reg = registrations.find(r => r.id === id);
+            if (!reg) return;
+            const printArea = document.getElementById('receipt-print-area');
+            const genderHin = reg.gender === 'male' ? 'पुरुष' : (reg.gender === 'female' ? 'महिला' : 'अन्य');
+            const displayedId = reg.externalRclId && reg.externalRclId !== '' ? reg.externalRclId : reg.bookingId;
+            printArea.innerHTML = `
+                <div class="receipt-header">
+                    <strong>REDCLIFFE LABS</strong><br>
+                    Registration Receipt / रसीद
+                </div>
+                <div class="receipt-id">${displayedId}</div>
+                <div class="receipt-row"><span>Name / नाम:</span> <span>${reg.fullName}</span></div>
+                <div class="receipt-row"><span>Age/Sex / उम्र/लिंग:</span> <span>${reg.age}/${genderHin}</span></div>
+                <div class="receipt-row"><span>Mobile / मोबाइल:</span> <span>${reg.mobile}</span></div>
+                <div class="receipt-row"><span>Date / तारीख:</span> <span>${reg.date}</span></div>
+                <div class="receipt-row"><span>Phlebo / फ्लेबो:</span> <span>${reg.phleboName || '--'}</span></div>
+                <div style="margin: 8px 0; border-top: 1px dashed black; padding-top: 5px; font-weight: bold;">VITALS / स्वास्थ्य माप:</div>
+                <div class="receipt-row"><span>BP / बीपी:</span> <span>${reg.vitals.bp || '--'}</span></div>
+                <div class="receipt-row"><span>Pulse / नब्ज:</span> <span>${reg.vitals.pulse || '--'}</span></div>
+                <div class="receipt-row"><span>RBS / शुगर:</span> <span>${reg.vitals.rbs || '--'}</span></div>
+                <div class="receipt-footer" style="margin-top: 20px;">
+                    Thank you / धन्यवाद<br>
+                    www.redcliffelabs.com
+                </div>
+            `;
+            printArea.style.display = 'block';
+            window.print();
+            printArea.style.display = 'none';
+        }
+
+        function downloadCSV() {
+            const headers = ["BookingID", "ExternalRCLID", "CustomerName", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "PhleboName", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Remarks"];
+            const rows = registrations.map(r => [
+                r.bookingId, r.externalRclId || '', r.fullName, r.age, r.gender, r.empId, r.mobile, r.email, r.date, 
+                r.phleboName || '', 
+                r.vitals.height, r.vitals.weight, r.vitals.bp, r.vitals.pulse, r.vitals.spo2, r.vitals.rbs, r.remarks
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v||''}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `redcliffe_export_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        function clearLocalData() {
+            const code = prompt("Enter security code (RCLXXXX) / डेटा हटाने के लिए कोड दर्ज करें:");
+            if (code === RESET_CODE) {
+                localStorage.clear();
+                registrations = [];
+                updateUI();
+                displayStatus("All data cleared / सारा डेटा हटा दिया गया", "error");
+            } else if (code !== null) {
+                displayStatus("Invalid code / गलत कोड", "error");
+            }
+        }
+    </script>
+</body>
+</html>
