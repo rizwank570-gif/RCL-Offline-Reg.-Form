@@ -362,6 +362,7 @@
                 <button onclick="syncAllRecords()" id="sync-all-btn" class="btn-secondary span-2" style="background-color: #ecfdf5; border-color: #10b981; color: #047857; font-weight: bold;">Bulk Sync All Local Records / सभी स्थानीय डेटा सिंक करें</button>
                 <button onclick="unsyncAllRecords()" id="unsync-all-btn" class="btn-secondary span-2" style="background-color: #fffbeb; border-color: #f59e0b; color: #b45309;">Unsync All Records / सभी डेटा अनसिंक करें</button>
                 <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download CSV / डेटा डाउनलोड</button>
+                <button onclick="viewRawCSV()" id="view-csv-btn" disabled class="btn-secondary">View CSV Text / डेटा देखें</button>
                 <button onclick="copyCSVToClipboard()" id="copy-csv-btn" disabled class="btn-secondary">Copy Data / डेटा कॉपी करें</button>
                 <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data</button>
                 <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
@@ -410,19 +411,21 @@
         }
 
         /**
-         * Safe helper to get vital values from either flat or nested structure
-         * Supports backward compatibility for data already in local storage.
+         * Enhanced helper to get vital values from flat or nested structure.
+         * Accounts for keys with dashes and underscores for total historical support.
          */
         function getVitalValue(reg, key) {
             // Priority 1: Check standard flat key (e.g., reg.v_bp)
-            if (reg[key] !== undefined && reg[key] !== null && reg[key] !== "") {
-                return reg[key];
-            }
+            if (reg[key] !== undefined && reg[key] !== null && reg[key] !== "") return reg[key];
+            
             // Priority 2: Check nested vitals object (e.g., reg.vitals.bp)
-            const oldKey = key.replace('v_', '');
-            if (reg.vitals && reg.vitals[oldKey] !== undefined && reg.vitals[oldKey] !== null) {
-                return reg.vitals[oldKey];
-            }
+            const baseKey = key.replace('v_', '').replace('v-', '');
+            if (reg.vitals && reg.vitals[baseKey] !== undefined && reg.vitals[baseKey] !== null) return reg.vitals[baseKey];
+            
+            // Priority 3: Check for dashed root key (e.g., reg['v-bp'])
+            const dashKey = key.replace('_', '-');
+            if (reg[dashKey] !== undefined && reg[dashKey] !== null && reg[dashKey] !== "") return reg[dashKey];
+            
             return "";
         }
 
@@ -472,30 +475,24 @@
             }
             const syncBtn = document.getElementById('sync-all-btn');
             syncBtn.disabled = true;
-            const originalText = syncBtn.textContent;
             let successCount = 0;
-            let total = registrations.length;
-            for (let i = 0; i < total; i++) {
-                syncBtn.textContent = `Syncing ${i + 1} of ${total}...`;
-                const success = await syncRecordToCloud(registrations[i]);
-                if (success) {
+            for (let i = 0; i < registrations.length; i++) {
+                syncBtn.textContent = `Syncing ${i + 1} of ${registrations.length}...`;
+                if (await syncRecordToCloud(registrations[i])) {
                     registrations[i].synced = true;
                     successCount++;
                 }
             }
-            save(); 
-            updateUI();
-            syncBtn.disabled = false;
-            syncBtn.textContent = originalText;
-            displayStatus(`Bulk Sync Complete! ${successCount} records processed.`, 'success');
+            save(); updateUI();
+            syncBtn.disabled = false; syncBtn.textContent = "Bulk Sync All Local Records / सभी स्थानीय डेटा सिंक करें";
+            displayStatus(`Sync Complete! ${successCount} records processed.`, 'success');
         }
 
         function unsyncAllRecords() {
             if (registrations.length === 0) return;
             if (confirm("Mark all records as 'Not Synced'? / क्या आप सभी डेटा अनसिंक करना चाहते हैं?")) {
                 registrations.forEach(reg => reg.synced = false);
-                save();
-                updateUI();
+                save(); updateUI();
                 displayStatus("All records marked as Pending Sync.", "secondary");
             }
         }
@@ -505,43 +502,27 @@
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
             submitBtn.textContent = "Syncing...";
-            const form = e.target;
-            const fd = new FormData(form);
+            const fd = new FormData(e.target);
             const raw = localStorage.getItem(STORAGE_KEY);
-            let nextNum = STARTING_NUM;
-            if (raw) nextNum = JSON.parse(raw).nextNum || STARTING_NUM;
+            let nextNum = raw ? JSON.parse(raw).nextNum || STARTING_NUM : STARTING_NUM;
             const bookingId = `${ID_PREFIX}${nextNum}`;
             const entry = {
-                id: Date.now(),
-                bookingId,
-                timestamp: new Date().toLocaleString(),
+                id: Date.now(), bookingId, timestamp: new Date().toLocaleString(),
                 externalRclId: fd.get('external-rcl-id') || "", 
-                fullName: fd.get('full-name'),
-                age: fd.get('age'),
-                gender: fd.get('gender'),
-                empId: fd.get('employee-id') || "",
-                mobile: fd.get('mobile-number'),
-                email: fd.get('email') || "",
-                date: fd.get('start-date'),
-                phleboName: fd.get('phlebo-name'), 
-                remarks: fd.get('remarks') || "",
-                v_height: fd.get('v-height') || "",
-                v_weight: fd.get('v-weight') || "",
-                v_bp: fd.get('v-bp') || "",
-                v_pulse: fd.get('v-pulse') || "",
-                v_spo2: fd.get('v-spo2') || "",
-                v_rbs: fd.get('v-rbs') || "",
+                fullName: fd.get('full-name'), age: fd.get('age'), gender: fd.get('gender'),
+                empId: fd.get('employee-id') || "", mobile: fd.get('mobile-number'), email: fd.get('email') || "",
+                date: fd.get('start-date'), phleboName: fd.get('phlebo-name'), remarks: fd.get('remarks') || "",
+                v_height: fd.get('v-height') || "", v_weight: fd.get('v-weight') || "", v_bp: fd.get('v-bp') || "",
+                v_pulse: fd.get('v-pulse') || "", v_spo2: fd.get('v-spo2') || "", v_rbs: fd.get('v-rbs') || "",
                 synced: false 
             };
             const cloudSuccess = await syncRecordToCloud(entry);
             if (cloudSuccess) entry.synced = true;
             registrations.unshift(entry);
-            save(nextNum + 1);
-            updateUI();
+            save(nextNum + 1); updateUI();
             displayStatus(cloudSuccess ? `Synced: ${bookingId}` : `Saved Locally: ${bookingId}`, cloudSuccess ? 'success' : 'error');
             clearFormFields(false, true);
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Register & Sync";
+            submitBtn.disabled = false; submitBtn.textContent = "Register & Sync";
         }
 
         // --- Storage & UI ---
@@ -554,10 +535,7 @@
             const raw = localStorage.getItem(DRAFT_KEY);
             if (raw) {
                 const draft = JSON.parse(raw);
-                Object.keys(draft).forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.value = draft[id];
-                });
+                Object.keys(draft).forEach(id => { if (document.getElementById(id)) document.getElementById(id).value = draft[id]; });
             }
         }
         function clearFormFields(showStatus = true, keepCSV = false) {
@@ -583,12 +561,10 @@
             updateUI();
         }
         function updateUI() {
-            const list = document.getElementById('registration-list');
             const hasData = registrations.length > 0;
-            document.getElementById('download-csv-btn').disabled = !hasData;
-            document.getElementById('copy-csv-btn').disabled = !hasData;
-            document.getElementById('clear-data-btn').disabled = !hasData;
+            ['download-csv-btn', 'copy-csv-btn', 'clear-data-btn', 'view-csv-btn'].forEach(id => document.getElementById(id).disabled = !hasData);
             document.getElementById('expiration-info').textContent = `Local records: ${registrations.length}`;
+            const list = document.getElementById('registration-list');
             if (!hasData) {
                 list.innerHTML = '<p class="text-subtle italic text-center py-4">No local data found</p>';
                 return;
@@ -608,27 +584,13 @@
             `).join('');
         }
 
-        // --- CSV Functions Optimized for Vidmate / Restricted Mobile Browsers ---
+        // --- Optimized Export Functions (Vidmate Support) ---
         function generateCSVString() {
             const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "Phlebo", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Synced"];
             const csvRows = registrations.map(r => [
-                r.bookingId, 
-                r.externalRclId, 
-                r.fullName, 
-                r.age, 
-                r.gender, 
-                r.empId, 
-                r.mobile, 
-                r.email, 
-                r.date, 
-                r.phleboName, 
-                getVitalValue(r, 'v_height'), 
-                getVitalValue(r, 'v_weight'), 
-                getVitalValue(r, 'v_bp'), 
-                getVitalValue(r, 'v_pulse'), 
-                getVitalValue(r, 'v_spo2'), 
-                getVitalValue(r, 'v_rbs'), 
-                r.synced
+                r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.empId, r.mobile, r.email, r.date, r.phleboName, 
+                getVitalValue(r, 'v_height'), getVitalValue(r, 'v_weight'), getVitalValue(r, 'v_bp'), getVitalValue(r, 'v_pulse'), 
+                getVitalValue(r, 'v_spo2'), getVitalValue(r, 'v_rbs'), r.synced
             ].map(v => `"${(v||'').toString().replace(/"/g, '""')}"`).join(','));
             return [headers.join(','), ...csvRows].join('\n');
         }
@@ -636,66 +598,52 @@
         function downloadCSV() {
             const csvContent = generateCSVString();
             const fileName = `redcliffe_export_${new Date().toISOString().split('T')[0]}.csv`;
-            
             try {
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                if (navigator.msSaveBlob) { 
-                    navigator.msSaveBlob(blob, fileName);
-                } else {
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement("a");
-                    link.setAttribute("href", url);
-                    link.setAttribute("download", fileName);
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => {
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-                    }, 200);
-                }
-            } catch (e) {
-                // Fallback Data URI approach
-                const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
+                link.setAttribute("href", url);
                 link.setAttribute("download", fileName);
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
+                setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 200);
+            } catch (e) {
+                const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+                window.open(encodedUri); // Vidmate fallback
+            }
+        }
+
+        function viewRawCSV() {
+            const csvContent = generateCSVString();
+            const newWindow = window.open();
+            if (newWindow) {
+                newWindow.document.write('<pre style="padding: 20px; font-family: monospace; white-space: pre-wrap; word-break: break-all;">' + csvContent + '</pre>');
+                newWindow.document.title = "CSV Export Preview";
+            } else {
+                displayStatus("Popup blocked! Please allow popups to view CSV text.", "error");
             }
         }
 
         function copyCSVToClipboard() {
             const csvContent = generateCSVString();
             const textArea = document.createElement("textarea");
-            
-            // Set styles to make it "invisible" but functional for copy
             textArea.value = csvContent;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-9999px";
-            textArea.style.top = "0";
+            textArea.style.position = "fixed"; textArea.style.left = "-9999px"; textArea.style.top = "0";
             document.body.appendChild(textArea);
-            
-            textArea.focus();
-            textArea.select();
-            textArea.setSelectionRange(0, 999999); // Force selection for mobile
-            
+            textArea.focus(); textArea.select();
+            textArea.setSelectionRange(0, 999999);
             try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    displayStatus("Data copied to clipboard! Paste it into a file or email.", "success");
-                } else {
-                    throw new Error("unsuccessful");
-                }
+                if (document.execCommand('copy')) {
+                    displayStatus("Data copied! Paste it into a file or email.", "success");
+                } else { throw new Error(); }
             } catch (err) {
-                console.error('Clipboard copy error:', err);
-                displayStatus("Copy failed. Try the download button.", "error");
+                // Final fallback: show in a modal or alert (Vidmate sometimes blocks clipboard)
+                alert("Clipboard copy failed in this browser. Please use 'View CSV Text' and copy manually.");
             }
             document.body.removeChild(textArea);
         }
 
-        // --- File & Interaction ---
+        // --- File & Auto-selection ---
         function initializeCustomerUpload() {
             document.getElementById('csv-upload').addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -710,8 +658,7 @@
                     select.innerHTML = '<option value="">-- Select Customer --</option>';
                     preRegisteredCustomers.forEach(c => {
                         const opt = document.createElement('option');
-                        opt.value = c.id;
-                        opt.textContent = `${c.fullName} (${c.externalRclId || c.empId})`;
+                        opt.value = c.id; opt.textContent = `${c.fullName} (${c.externalRclId || c.empId})`;
                         select.appendChild(opt);
                     });
                     document.getElementById('customer-select-container').classList.remove('hidden');
@@ -740,11 +687,7 @@
         function attemptAutoSelectCustomer(type, val) {
             if (type === 'mobile' && val.length === 10) {
                 const c = preRegisteredCustomers.find(x => x.mobile == val);
-                if (c) {
-                    document.getElementById('pre-select-customer').value = c.id;
-                    populateFormFromSelection();
-                    displayStatus(`Matched: ${c.fullName}`, 'secondary');
-                }
+                if (c) { document.getElementById('pre-select-customer').value = c.id; populateFormFromSelection(); }
             }
         }
 
@@ -777,9 +720,7 @@
 
         function clearLocalData() {
             if (prompt("Security Code:") === RESET_CODE) {
-                localStorage.clear();
-                registrations = [];
-                updateUI();
+                localStorage.clear(); registrations = []; updateUI();
                 displayStatus("All local data cleared.", "error");
             }
         }
