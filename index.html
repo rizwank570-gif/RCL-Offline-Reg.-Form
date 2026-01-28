@@ -361,7 +361,8 @@
             <div class="responsive-grid-2" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; gap: 1rem;">
                 <button onclick="syncAllRecords()" id="sync-all-btn" class="btn-secondary span-2" style="background-color: #ecfdf5; border-color: #10b981; color: #047857; font-weight: bold;">Bulk Sync All Local Records / सभी स्थानीय डेटा सिंक करें</button>
                 <button onclick="unsyncAllRecords()" id="unsync-all-btn" class="btn-secondary span-2" style="background-color: #fffbeb; border-color: #f59e0b; color: #b45309;">Unsync All Records / सभी डेटा अनसिंक करें</button>
-                <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download Local CSV</button>
+                <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download CSV / डेटा डाउनलोड</button>
+                <button onclick="copyCSVToClipboard()" id="copy-csv-btn" disabled class="btn-secondary">Copy Data / डेटा कॉपी करें</button>
                 <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data</button>
                 <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
             </div>
@@ -412,7 +413,6 @@
         async function syncRecordToCloud(entry) {
             if (!SCRIPT_URL) return false;
             try {
-                // Mapping the entry to the flat object the Google Script expects
                 const syncData = {
                     bookingId: entry.bookingId,
                     timestamp: entry.timestamp,
@@ -448,62 +448,38 @@
             }
         }
 
-        /**
-         * Bulk Sync Logic:
-         * Iterates through ALL local records and resends them to Google Sheets.
-         */
         async function syncAllRecords() {
             if (registrations.length === 0) {
                 displayStatus("No local records to sync", "secondary");
                 return;
             }
-
             const syncBtn = document.getElementById('sync-all-btn');
             syncBtn.disabled = true;
             const originalText = syncBtn.textContent;
-            
             let successCount = 0;
             let total = registrations.length;
-
             for (let i = 0; i < total; i++) {
-                // Update progress on the button
                 syncBtn.textContent = `Syncing ${i + 1} of ${total}...`;
-                
                 const success = await syncRecordToCloud(registrations[i]);
                 if (success) {
                     registrations[i].synced = true;
                     successCount++;
                 }
             }
-            
-            // Save state updates locally
             save(); 
             updateUI();
-            
             syncBtn.disabled = false;
             syncBtn.textContent = originalText;
-            displayStatus(`Bulk Sync Complete! ${successCount} records processed to Google Sheets.`, 'success');
+            displayStatus(`Bulk Sync Complete! ${successCount} records processed.`, 'success');
         }
 
-        /**
-         * Unsync All Logic:
-         * Resets the synced status of all records so they can be re-synced.
-         */
         function unsyncAllRecords() {
-            if (registrations.length === 0) {
-                displayStatus("No records found to unsync / अनसिंक करने के लिए कोई रिकॉर्ड नहीं मिला", "secondary");
-                return;
-            }
-
-            const confirmUnsync = confirm("This will mark all local records as 'Not Synced'. This is useful if you want to resend all data to the Google Sheet. Continue? / यह सभी रिकॉर्ड्स को 'अनसिंक्ड' के रूप में चिह्नित करेगा। क्या आप जारी रखना चाहते हैं?");
-            
-            if (confirmUnsync) {
-                registrations.forEach(reg => {
-                    reg.synced = false;
-                });
+            if (registrations.length === 0) return;
+            if (confirm("Mark all records as 'Not Synced'? / क्या आप सभी डेटा अनसिंक करना चाहते हैं?")) {
+                registrations.forEach(reg => reg.synced = false);
                 save();
                 updateUI();
-                displayStatus("All records marked as Pending Sync. You can now use Bulk Sync to re-upload everything.", "secondary");
+                displayStatus("All records marked as Pending Sync.", "secondary");
             }
         }
 
@@ -512,16 +488,11 @@
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
             submitBtn.textContent = "Syncing...";
-
             const form = e.target;
             const fd = new FormData(form);
             const raw = localStorage.getItem(STORAGE_KEY);
             let nextNum = STARTING_NUM;
-            if (raw) {
-                const wrapper = JSON.parse(raw);
-                nextNum = wrapper.nextNum || STARTING_NUM;
-            }
-            
+            if (raw) nextNum = JSON.parse(raw).nextNum || STARTING_NUM;
             const bookingId = `${ID_PREFIX}${nextNum}`;
             const entry = {
                 id: Date.now(),
@@ -545,22 +516,12 @@
                 v_rbs: fd.get('v-rbs') || "",
                 synced: false 
             };
-
-            // 1. Immediate Sync Attempt
             const cloudSuccess = await syncRecordToCloud(entry);
             if (cloudSuccess) entry.synced = true;
-
-            // 2. Save locally
             registrations.unshift(entry);
             save(nextNum + 1);
             updateUI();
-
-            if (cloudSuccess) {
-                displayStatus(`Registered & Synced: ${bookingId}`, 'success');
-            } else {
-                displayStatus(`Registered Locally: ${bookingId} (Cloud Sync failed, please click Bulk Sync later)`, 'error');
-            }
-
+            displayStatus(cloudSuccess ? `Synced: ${bookingId}` : `Saved Locally: ${bookingId}`, cloudSuccess ? 'success' : 'error');
             clearFormFields(false, true);
             submitBtn.disabled = false;
             submitBtn.textContent = "Register & Sync";
@@ -572,7 +533,6 @@
             document.querySelectorAll('.persist').forEach(input => draft[input.id] = input.value);
             localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
         }
-
         function restoreDraft() {
             const raw = localStorage.getItem(DRAFT_KEY);
             if (raw) {
@@ -583,7 +543,6 @@
                 });
             }
         }
-
         function clearFormFields(showStatus = true, keepCSV = false) {
             document.getElementById('registration-form').reset();
             localStorage.removeItem(DRAFT_KEY);
@@ -596,57 +555,104 @@
             document.getElementById('display-rcl-id').value = "N/A"; 
             if (showStatus) displayStatus("Form cleared.", "secondary");
         }
-
         function save(nextNumOverride) {
             const raw = localStorage.getItem(STORAGE_KEY);
-            let nextNum = nextNumOverride;
-            if (raw && !nextNumOverride) {
-                nextNum = JSON.parse(raw).nextNum;
-            }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                data: registrations,
-                nextNum: nextNum || STARTING_NUM
-            }));
+            let nextNum = nextNumOverride || (raw ? JSON.parse(raw).nextNum : STARTING_NUM);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ data: registrations, nextNum }));
         }
-
         function loadData() {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const wrapper = JSON.parse(raw);
-                registrations = wrapper.data || [];
-            }
+            if (raw) registrations = JSON.parse(raw).data || [];
             updateUI();
         }
-
         function updateUI() {
             const list = document.getElementById('registration-list');
-            document.getElementById('download-csv-btn').disabled = document.getElementById('clear-data-btn').disabled = registrations.length === 0;
+            const hasData = registrations.length > 0;
+            document.getElementById('download-csv-btn').disabled = !hasData;
+            document.getElementById('copy-csv-btn').disabled = !hasData;
+            document.getElementById('clear-data-btn').disabled = !hasData;
             document.getElementById('expiration-info').textContent = `Local records: ${registrations.length}`;
-
-            if (registrations.length === 0) {
+            if (!hasData) {
                 list.innerHTML = '<p class="text-subtle italic text-center py-4">No local data found</p>';
                 return;
             }
-
             list.innerHTML = registrations.map(reg => `
                 <div class="registration-item">
                     <div style="flex: 1;">
                         <div style="font-weight: 800; color: var(--color-primary); font-size: 0.8rem;">${reg.externalRclId || reg.bookingId}</div>
                         <div style="font-weight: bold; margin: 2px 0;">${reg.fullName}</div>
                         <div class="text-subtle">${reg.age}Y | ${reg.gender} | ${reg.mobile}</div>
-                        <span class="badge ${reg.synced ? 'badge-success' : 'badge-pending'}">
-                            ${reg.synced ? '✓ Synced to Cloud' : '⚠ Local Only (Pending Sync)'}
-                        </span>
+                        <span class="badge ${reg.synced ? 'badge-success' : 'badge-pending'}">${reg.synced ? '✓ Synced' : '⚠ Pending Sync'}</span>
                     </div>
                     <div style="text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                         <button onclick="printReceipt(${reg.id})" class="btn-print">Print</button>
-                        <span style="font-size: 0.65rem; color: #9ca3af;">${reg.timestamp.split(',')[1] || ''}</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- CSV & File Loading ---
+        // --- CSV Functions Optimized for Restricted Mobile Browsers (Vidmate) ---
+        function generateCSVString() {
+            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "Phlebo", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Synced"];
+            const csvRows = registrations.map(r => [
+                r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.empId, r.mobile, r.email, r.date, r.phleboName, 
+                r.v_height, r.v_weight, r.v_bp, r.v_pulse, r.v_spo2, r.v_rbs, r.synced
+            ].map(v => `"${(v||'').toString().replace(/"/g, '""')}"`).join(','));
+            return [headers.join(','), ...csvRows].join('\n');
+        }
+
+        function downloadCSV() {
+            const csvContent = generateCSVString();
+            const fileName = `redcliffe_export_${new Date().toISOString().split('T')[0]}.csv`;
+            
+            // Standard approach first
+            try {
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                
+                if (navigator.msSaveBlob) { 
+                    navigator.msSaveBlob(blob, fileName);
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", fileName);
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    // Small delay before cleanup for mobile browsers
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }, 200);
+                }
+            } catch (e) {
+                // Fallback for browsers like Vidmate that block Blob downloads
+                const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", fileName);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function copyCSVToClipboard() {
+            const csvContent = generateCSVString();
+            const textArea = document.createElement("textarea");
+            textArea.value = csvContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                displayStatus("Data copied to clipboard! Paste it into a file or email. / डेटा कॉपी हो गया!", "success");
+            } catch (err) {
+                displayStatus("Failed to copy. Please use the download button instead.", "error");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // --- File & Interaction ---
         function initializeCustomerUpload() {
             document.getElementById('csv-upload').addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -724,34 +730,6 @@
                 <div class="receipt-footer">Thank you / धन्यवाद</div>
             `;
             window.print();
-        }
-
-        function downloadCSV() {
-            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "Phlebo", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Synced"];
-            const csv = [headers.join(','), ...registrations.map(r => [
-                r.bookingId, 
-                r.externalRclId, 
-                r.fullName, 
-                r.age, 
-                r.gender, 
-                r.empId,
-                r.mobile, 
-                r.email, 
-                r.date, 
-                r.phleboName, 
-                r.v_height,
-                r.v_weight,
-                r.v_bp, 
-                r.v_pulse,
-                r.v_spo2,
-                r.v_rbs, 
-                r.synced
-            ].join(','))].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `redcliffe_export_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
         }
 
         function clearLocalData() {
