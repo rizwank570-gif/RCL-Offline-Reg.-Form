@@ -6,7 +6,7 @@
     <title>Redcliffe Labs | Customer Registration Portal</title>
     
     <style>
-        /* Color Variables - Reverted to your original format */
+        /* Color Variables */
         :root {
             --color-primary: #dc2626; 
             --color-primary-dark: #b91c1c;
@@ -35,18 +35,10 @@
         }
         
         @media (max-width: 1023px) { 
-            body {
-                padding: 0.5rem; 
-            }
-            .container-wrapper {
-                gap: 1rem; 
-            }
-            .card-modern {
-                padding: 1rem; 
-            }
-            .brand-logo {
-                height: 50px; 
-            }
+            body { padding: 0.5rem; }
+            .container-wrapper { gap: 1rem; }
+            .card-modern { padding: 1rem; }
+            .brand-logo { height: 50px; }
         }
 
         @media (min-width: 1024px) {
@@ -66,9 +58,7 @@
             flex: 1;
         }
         
-        .right-card {
-            width: 100%;
-        }
+        .right-card { width: 100%; }
         @media (min-width: 1024px) { .right-card { width: 400px; flex: none; } }
 
         /* Header Logo Section */
@@ -85,7 +75,7 @@
             object-fit: contain;
         }
 
-        /* Typography - Reverted to your exact section title format */
+        /* Typography */
         h1, h2, h3 { color: #1f2937; margin-top: 0; } 
         .text-subtle { color: #6b7280; font-size: 0.875rem; } 
         .section-title { 
@@ -99,7 +89,7 @@
         } 
         .section-title:first-child { margin-top: 0; } 
 
-        /* Form Grid - Mobile Optimized to force full-width */
+        /* Form Grid */
         .grid-2, .responsive-grid-2 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -111,7 +101,6 @@
             gap: 0.75rem;
         }
 
-        /* MOBILE FIX: Force 1 column for proper mobile view */
         @media (max-width: 640px) {
             .grid-2, .grid-3, .responsive-grid-2 { grid-template-columns: 1fr !important; } 
             .span-2 { grid-column: span 1 !important; }
@@ -125,7 +114,7 @@
             padding: 0.75rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            font-size: 16px; /* Added 16px to prevent auto-zoom on mobile */
+            font-size: 16px; 
             box-sizing: border-box;
             transition: border-color 0.2s;
         }
@@ -148,7 +137,9 @@
             font-size: 1rem;
             transition: background 0.2s;
         }
-        .btn-primary:hover { background-color: var(--color-primary-dark); }
+        .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .btn-primary:hover:not(:disabled) { background-color: var(--color-primary-dark); }
+        
         .btn-secondary { 
             width: 100%;
             background-color: #f3f4f6; 
@@ -190,24 +181,7 @@
             justify-content: space-between;
         }
 
-        /* PRINT STYLES */
-        @media print {
-            body * { visibility: hidden; }
-            #receipt-print-area, #receipt-print-area * { visibility: visible; }
-            #receipt-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 58mm;
-                padding: 0;
-                margin: 0;
-                background: white;
-                color: black;
-                font-family: monospace;
-            }
-            .no-print { display: none !important; }
-        }
-
+        /* Receipt View */
         #receipt-print-area {
             width: 58mm;
             padding: 10px;
@@ -229,6 +203,12 @@
         .status-success { background: #dcfce7; color: #166534; } 
         .status-error { background: #fee2e2; color: #991b1b; } 
         .status-secondary { background: #e0f2fe; color: #075985; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible; }
+            #receipt-print-area { position: absolute; left: 0; top: 0; display: block; }
+        }
     </style>
 </head>
 <body>
@@ -236,8 +216,6 @@
     <div id="receipt-print-area"></div>
 
     <div class="container-wrapper no-print">
-        
-        <!-- Left: Form -->
         <div class="card-modern">
             <div class="header-logo-container">
                 <div>
@@ -252,7 +230,6 @@
             <div id="status-message" class="hidden status-box"></div>
 
             <form id="registration-form" onsubmit="handleRegistration(event)">
-
                 <input type="hidden" id="external-rcl-id" name="external-rcl-id" class="persist">
 
                 <div class="section-title">Pre-Registration Data / पूर्व पंजीकरण डेटा</div>
@@ -299,7 +276,7 @@
                     
                     <div>
                         <label for="mobile-number">Mobile Number / मोबाइल नंबर *</label>
-                        <input type="tel" id="mobile-number" name="mobile-number" required placeholder="10-digit number / १० अंकों का नंबर" class="input-field persist">
+                        <input type="tel" id="mobile-number" name="mobile-number" required placeholder="10-digit number" class="input-field persist">
                     </div>
 
                     <div>
@@ -319,11 +296,10 @@
 
                     <div class="span-2"> 
                         <label for="phlebo-name">Phlebotomist Name / फ्लेबो नाम *</label>
-                        <input type="text" id="phlebo-name" name="phlebo-name" required placeholder="Enter phlebotomist name / फ्लेबो का नाम लिखें" class="input-field persist">
+                        <input type="text" id="phlebo-name" name="phlebo-name" required placeholder="Enter phlebotomist name" class="input-field persist">
                     </div>
                 </div>
 
-                <!-- VITAL TOGGLE START -->
                 <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 1rem 0;"> 
                     <span>Vitals / स्वास्थ्य माप</span>
                     <button type="button" class="btn-secondary" style="width: auto; padding: 0.5rem 1rem;" onclick="toggleVitals()" id="vitals-toggle-btn">Record Vitals / माप दर्ज करें</button>
@@ -332,60 +308,63 @@
                 <div id="vitals-container" class="hidden">
                     <div class="grid-3">
                         <div>
-                            <label for="v-height">Height / ऊंचाई (cm)</label>
-                            <input type="number" id="v-height" name="v-height" placeholder="Height / ऊंचाई" class="input-field persist">
+                            <label for="v-height">Height (cm)</label>
+                            <input type="number" id="v-height" name="v-height" class="input-field persist">
                         </div>
                         <div>
-                            <label for="v-weight">Weight / वजन (kg)</label>
-                            <input type="number" step="0.1" id="v-weight" name="v-weight" placeholder="Weight / वजन" class="input-field persist">
+                            <label for="v-weight">Weight (kg)</label>
+                            <input type="number" step="0.1" id="v-weight" name="v-weight" class="input-field persist">
                         </div>
                         <div>
-                            <label for="v-bp">BP / रक्तचाप (mmHg)</label>
-                            <input type="text" id="v-bp" name="v-bp" placeholder="BP / रक्तचाप" class="input-field persist">
+                            <label for="v-bp">BP (mmHg)</label>
+                            <input type="text" id="v-bp" name="v-bp" placeholder="120/80" class="input-field persist">
                         </div>
                         <div>
-                            <label for="v-pulse">Pulse / नब्ज (bpm)</label>
-                            <input type="number" id="v-pulse" name="v-pulse" placeholder="Pulse / नब्ज" class="input-field persist">
+                            <label for="v-pulse">Pulse (bpm)</label>
+                            <input type="number" id="v-pulse" name="v-pulse" class="input-field persist">
                         </div>
                         <div>
-                            <label for="v-spo2">SpO2 / ऑक्सीजन (%)</label>
-                            <input type="number" id="v-spo2" name="v-spo2" placeholder="Oxygen / ऑक्सीजन" class="input-field persist">
+                            <label for="v-spo2">SpO2 (%)</label>
+                            <input type="number" id="v-spo2" name="v-spo2" class="input-field persist">
                         </div>
                         <div>
-                            <label for="v-rbs">RBS / शुगर (mg/dL)</label>
-                            <input type="number" id="v-rbs" name="v-rbs" placeholder="Sugar / शुगर" class="input-field persist">
+                            <label for="v-rbs">RBS (mg/dL)</label>
+                            <input type="number" id="v-rbs" name="v-rbs" class="input-field persist">
                         </div>
                     </div>
                 </div>
 
                 <div class="span-2" style="margin-top: 1.25rem;">
                     <label for="remarks">Remarks / टिप्पणी</label>
-                    <textarea id="remarks" name="remarks" rows="3" class="input-field persist" placeholder="Additional notes / अतिरिक्त टिप्पणी..."></textarea>
+                    <textarea id="remarks" name="remarks" rows="3" class="input-field persist" placeholder="Additional notes..."></textarea>
                 </div>
 
                 <div class="responsive-grid-2" style="margin-top: 2rem; gap: 1rem;">
                     <button type="button" class="btn-secondary" onclick="clearFormFields(true, true)">Clear Form / फॉर्म साफ करें</button>
-                    <button type="submit" class="btn-primary">Register & Save Locally / पंजीकरण करें और सहेजें</button>
+                    <button type="submit" id="submit-btn" class="btn-primary">Register & Sync to Sheets / पंजीकरण और सिंक</button>
                 </div>
             </form>
             
             <div class="responsive-grid-2" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; gap: 1rem;">
-                <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download CSV / डेटा डाउनलोड करें</button>
-                <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data / डेटा हटाएं</button>
+                <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download Local CSV</button>
+                <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data</button>
                 <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
             </div>
         </div>
 
-        <!-- Right: List -->
         <div class="card-modern right-card">
-            <h2 style="font-size: 1.25rem; border-bottom: 1px solid #f1f1f1; padding-bottom: 0.75rem; margin-bottom: 1rem;">Registrations / पंजीकरण सूची</h2>
+            <h2 style="font-size: 1.25rem; border-bottom: 1px solid #f1f1f1; padding-bottom: 0.75rem; margin-bottom: 1rem;">Registrations</h2>
             <div id="registration-list" style="max-height: 800px; overflow-y: auto;">
-                <p class="text-subtle italic text-center">No data found / कोई डेटा नहीं मिला</p>
+                <p class="text-subtle italic text-center">No local data found</p>
             </div>
         </div>
     </div>
 
     <script>
+        // --- CONFIGURATION ---
+        // PASTE YOUR GOOGLE WEB APP URL HERE
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAxmIfWqQsS15vsvsBOfbi35os70-3F6moxMrfPc4P1kJbp1Omdz0et-bdGOdZeJC7/exec"; 
+
         let registrations = [];
         let preRegisteredCustomers = [];
         const STORAGE_KEY = 'redcliffe_camp_v1';
@@ -398,62 +377,93 @@
             loadData();
             restoreDraft();
             initializeCustomerUpload();
-            
             if (!document.getElementById('start-date').value) {
                 document.getElementById('start-date').value = new Date().toISOString().split('T')[0];
             }
-            
-            if (!document.getElementById('display-rcl-id').value) {
-                document.getElementById('display-rcl-id').value = 'N/A';
-            }
-
-            if (document.getElementById('v-height').value || 
-                document.getElementById('v-weight').value || 
-                document.getElementById('v-bp').value) {
-                
-                const container = document.getElementById('vitals-container');
-                const button = document.getElementById('vitals-toggle-btn');
-                container.classList.remove('hidden');
-                button.textContent = 'Hide Vitals / माप छिपाएँ';
-            }
-
             const persistInputs = document.querySelectorAll('.persist');
-            persistInputs.forEach(input => {
-                input.addEventListener('input', saveDraft);
-            });
-
+            persistInputs.forEach(input => input.addEventListener('input', saveDraft));
             document.getElementById('mobile-number').addEventListener('blur', (e) => attemptAutoSelectCustomer('mobile', e.target.value));
-            document.getElementById('email').addEventListener('blur', (e) => attemptAutoSelectCustomer('email', e.target.value));
         };
-
-        function toggleVitals() {
-            const container = document.getElementById('vitals-container');
-            const button = document.getElementById('vitals-toggle-btn');
-            
-            if (container.classList.contains('hidden')) {
-                container.classList.remove('hidden');
-                button.textContent = 'Hide Vitals / माप छिपाएँ';
-            } else {
-                container.classList.add('hidden');
-                button.textContent = 'Record Vitals / माप दर्ज करें';
-            }
-        }
 
         function displayStatus(msg, type) {
             const el = document.getElementById('status-message');
             el.textContent = msg;
             el.className = `status-box status-${type}`;
             el.classList.remove('hidden');
-            setTimeout(() => el.classList.add('hidden'), 4000);
+            if (type !== 'secondary') setTimeout(() => el.classList.add('hidden'), 5000);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        async function handleRegistration(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Syncing with Cloud...";
+
+            const form = e.target;
+            const fd = new FormData(form);
+            const raw = localStorage.getItem(STORAGE_KEY);
+            let nextNum = STARTING_NUM;
+            if (raw) {
+                const wrapper = JSON.parse(raw);
+                nextNum = wrapper.nextNum || STARTING_NUM;
+            }
+            
+            const bookingId = `${ID_PREFIX}${nextNum}`;
+            const entry = {
+                bookingId,
+                timestamp: new Date().toLocaleString(),
+                externalRclId: fd.get('external-rcl-id'), 
+                fullName: fd.get('full-name'),
+                age: fd.get('age'),
+                gender: fd.get('gender'),
+                empId: fd.get('employee-id'),
+                mobile: fd.get('mobile-number'),
+                email: fd.get('email'),
+                date: fd.get('start-date'),
+                phleboName: fd.get('phlebo-name'), 
+                remarks: fd.get('remarks'),
+                v_height: fd.get('v-height'),
+                v_weight: fd.get('v-weight'),
+                v_bp: fd.get('v-bp'),
+                v_pulse: fd.get('v-pulse'),
+                v_spo2: fd.get('v-spo2'),
+                v_rbs: fd.get('v-rbs')
+            };
+
+            // 1. Save Locally as backup
+            registrations.unshift({ ...entry, id: Date.now(), vitals: { bp: entry.v_bp, pulse: entry.v_pulse, rbs: entry.v_rbs } });
+            save(nextNum + 1);
+            updateUI();
+
+            // 2. Sync to Google Sheets
+            if (SCRIPT_URL) {
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', // standard for GAS web apps
+                        cache: 'no-cache',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(entry)
+                    });
+                    displayStatus(`Success! Registered locally and synced to Google Sheets. ID: ${bookingId}`, 'success');
+                } catch (err) {
+                    console.error(err);
+                    displayStatus(`Saved locally, but Cloud Sync failed. Please download CSV later.`, 'error');
+                }
+            } else {
+                displayStatus(`Registered locally: ${bookingId}. (Cloud Sync not configured)`, 'secondary');
+            }
+
+            clearFormFields(false, true);
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Register & Sync to Sheets";
+        }
+
+        // --- Core Helper Functions ---
         function saveDraft() {
             const draft = {};
-            const persistInputs = document.querySelectorAll('.persist');
-            persistInputs.forEach(input => {
-                draft[input.id] = input.value;
-            });
+            document.querySelectorAll('.persist').forEach(input => draft[input.id] = input.value);
             localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
         }
 
@@ -468,56 +478,24 @@
             }
         }
 
-        function clearDraft() {
-            localStorage.removeItem(DRAFT_KEY);
-        }
-        
-        /**
-         * Clears form fields and resets local draft state.
-         * @param {boolean} showStatus - Whether to show a success message.
-         * @param {boolean} keepCSV - If true, keeps the uploaded CSV data and customer dropdown visible.
-         */
         function clearFormFields(showStatus = true, keepCSV = false) {
             document.getElementById('registration-form').reset();
-            clearDraft();
-            
+            localStorage.removeItem(DRAFT_KEY);
             if (!keepCSV) {
-                const csvUpload = document.getElementById('csv-upload');
-                if (csvUpload) csvUpload.value = ''; 
-                
+                document.getElementById('csv-upload').value = '';
                 preRegisteredCustomers = [];
-                document.getElementById('upload-status').textContent = 'Upload CSV file (RCL Booking ID, Emp ID, Name, Age, Gender, Mobile, Email)';
-                
-                const preSelectContainer = document.getElementById('customer-select-container');
-                if (preSelectContainer) preSelectContainer.classList.add('hidden');
-
-                const preSelect = document.getElementById('pre-select-customer');
-                if (preSelect) {
-                    preSelect.innerHTML = '<option value="">-- Select Customer / ग्राहक चुनें --</option>'; 
-                    preSelect.value = ""; 
-                } 
-            } else {
-                // If we are keeping CSV, just reset the dropdown selection to blank
-                const preSelect = document.getElementById('pre-select-customer');
-                if (preSelect) preSelect.value = "";
+                document.getElementById('customer-select-container').classList.add('hidden');
             }
-
-            // Restore defaults that are shared across registrations
             document.getElementById('start-date').value = new Date().toISOString().split('T')[0];
-            
-            document.getElementById('external-rcl-id').value = ""; 
             document.getElementById('display-rcl-id').value = "N/A"; 
-            
-            const container = document.getElementById('vitals-container');
-            const button = document.getElementById('vitals-toggle-btn');
-            if (container && button) {
-                container.classList.add('hidden');
-                button.textContent = 'Record Vitals / माप दर्ज करें';
-            }
+            if (showStatus) displayStatus("Form cleared.", "secondary");
+        }
 
-            if (showStatus) {
-                 displayStatus("Form fields cleared.", "secondary");
-            }
+        function save(nextNumOverride) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                data: registrations,
+                nextNum: nextNumOverride || STARTING_NUM
+            }));
         }
 
         function loadData() {
@@ -525,199 +503,20 @@
             if (raw) {
                 const wrapper = JSON.parse(raw);
                 registrations = wrapper.data || [];
-                document.getElementById('expiration-info').textContent = `Local records / कुल रिकॉर्ड: ${registrations.length}`;
             }
             updateUI();
-        }
-
-        function initializeCustomerUpload() {
-            document.getElementById('csv-upload').addEventListener('change', handleFileUpload);
-        }
-
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvText = e.target.result;
-                    preRegisteredCustomers = parseCSV(csvText);
-                    
-                    if (preRegisteredCustomers.length > 0) {
-                        updateCustomerSelect(preRegisteredCustomers);
-                        document.getElementById('upload-status').textContent = `${preRegisteredCustomers.length} customers loaded.`
-                        document.getElementById('customer-select-container').classList.remove('hidden');
-                        displayStatus(`Loaded ${preRegisteredCustomers.length} customers.`, 'success');
-                    } else {
-                        displayStatus('CSV empty or wrong format.', 'error');
-                    }
-                } catch (error) {
-                    displayStatus('Error processing CSV.', 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function parseCSV(csvText) {
-            const lines = csvText.trim().split(/\r?\n/);
-            if (lines.length <= 1) return [];
-            const data = [];
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-                const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, '')); 
-                if (values.length >= 7) {
-                    data.push({
-                        id: Date.now() + i, 
-                        externalRclId: values[0] || '', 
-                        empId: values[1] || '',
-                        fullName: values[2] || '',
-                        age: values[3] || '',
-                        gender: values[4] ? values[4].toLowerCase() : '',
-                        mobile: values[5] || '',
-                        email: values[6] || ''
-                    });
-                }
-            }
-            return data;
-        }
-
-        function updateCustomerSelect(customers) {
-            const select = document.getElementById('pre-select-customer');
-            select.innerHTML = '<option value="">-- Select Customer / ग्राहक चुनें --</option>';
-            customers.forEach(c => {
-                if (c.fullName) {
-                    const option = document.createElement('option');
-                    option.value = c.id;
-                    let displayId = c.externalRclId ? `RCL: ${c.externalRclId}` : (c.empId ? `Emp: ${c.empId}` : 'N/A');
-                    option.textContent = `${c.fullName} (${displayId})`;
-                    select.appendChild(option);
-                }
-            });
-        }
-
-        function attemptAutoSelectCustomer(type, value) {
-            const normalizedValue = value.trim();
-            if (!normalizedValue) return;
-
-            let foundCustomer = null;
-            let matchKey = '';
-
-            if (type === 'mobile' && normalizedValue.length === 10) {
-                foundCustomer = preRegisteredCustomers.find(c => c.mobile.trim() === normalizedValue);
-                matchKey = 'Mobile';
-            } else if (type === 'email') {
-                const lowerValue = normalizedValue.toLowerCase();
-                foundCustomer = preRegisteredCustomers.find(c => c.email.toLowerCase().trim() === lowerValue);
-                matchKey = 'Email';
-            }
-            
-            const selector = document.getElementById('pre-select-customer');
-            if (foundCustomer) {
-                if (parseInt(selector.value) !== foundCustomer.id) {
-                    selector.value = foundCustomer.id;
-                    populateFormFromSelection(); 
-                    displayStatus(`Matched: ${foundCustomer.fullName}`, 'secondary');
-                }
-            }
-        }
-
-        function populateFormFromSelection() {
-            const selector = document.getElementById('pre-select-customer');
-            const selectedId = parseInt(selector.value);
-            if (!selectedId) {
-                clearFormFields(false, true); // Keep CSV if user just deselects
-                return; 
-            }
-            const customer = preRegisteredCustomers.find(c => c.id === selectedId);
-            if (customer) {
-                clearDraft(); 
-                document.getElementById('full-name').value = customer.fullName || '';
-                document.getElementById('age').value = customer.age || '';
-                let normalizedGender = 'other';
-                if (customer.gender.startsWith('m')) { normalizedGender = 'male'; } 
-                else if (customer.gender.startsWith('f')) { normalizedGender = 'female'; } 
-                document.getElementById('gender').value = normalizedGender;
-                document.getElementById('employee-id').value = customer.empId || '';
-                document.getElementById('mobile-number').value = customer.mobile || '';
-                document.getElementById('email').value = customer.email || '';
-                document.getElementById('external-rcl-id').value = customer.externalRclId || '';
-                document.getElementById('display-rcl-id').value = customer.externalRclId || 'N/A';
-                saveDraft(); 
-            }
-        }
-
-        function handleRegistration(e) {
-            e.preventDefault();
-            const form = e.target;
-            const fd = new FormData(form);
-            const raw = localStorage.getItem(STORAGE_KEY);
-            let nextNum = STARTING_NUM;
-            if (raw) {
-                const wrapper = JSON.parse(raw);
-                nextNum = wrapper.nextNum || STARTING_NUM;
-            }
-            const bookingId = `${ID_PREFIX}${nextNum}`;
-            const entry = {
-                id: Date.now(),
-                bookingId,
-                timestamp: new Date().toLocaleString(),
-                externalRclId: fd.get('external-rcl-id'), 
-                fullName: fd.get('full-name'),
-                age: fd.get('age'),
-                gender: fd.get('gender'),
-                empId: fd.get('employee-id'),
-                mobile: fd.get('mobile-number'),
-                email: fd.get('email'),
-                date: fd.get('start-date'),
-                phleboName: fd.get('phlebo-name'), 
-                remarks: fd.get('remarks'),
-                vitals: {
-                    height: fd.get('v-height'),
-                    weight: fd.get('v-weight'),
-                    bp: fd.get('v-bp'),
-                    pulse: fd.get('v-pulse'),
-                    spo2: fd.get('v-spo2'),
-                    rbs: fd.get('v-rbs')
-                }
-            };
-            registrations.unshift(entry);
-            save(nextNum + 1);
-            
-            // FIX: Call clearFormFields with keepCSV = true to prevent uploaded data from disappearing
-            clearFormFields(false, true);
-            
-            updateUI();
-            displayStatus(`Registered / पंजीकरण सफल: ${bookingId}`, 'success');
-        }
-
-        function save(nextNumOverride) {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            let nextNum = nextNumOverride;
-            if (raw && !nextNumOverride) {
-                const wrapper = JSON.parse(raw);
-                nextNum = wrapper.nextNum;
-            }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                data: registrations,
-                nextNum: nextNum || STARTING_NUM
-            }));
         }
 
         function updateUI() {
             const list = document.getElementById('registration-list');
-            const dlBtn = document.getElementById('download-csv-btn');
-            const rstBtn = document.getElementById('clear-data-btn');
-            document.getElementById('expiration-info').textContent = `Local records / कुल रिकॉर्ड: ${registrations.length}`;
+            document.getElementById('download-csv-btn').disabled = document.getElementById('clear-data-btn').disabled = registrations.length === 0;
+            document.getElementById('expiration-info').textContent = `Local records: ${registrations.length}`;
 
             if (registrations.length === 0) {
-                list.innerHTML = '<p class="text-subtle italic text-center py-4">No data found / कोई डेटा नहीं मिला</p>';
-                dlBtn.disabled = rstBtn.disabled = true;
+                list.innerHTML = '<p class="text-subtle italic text-center py-4">No data found</p>';
                 return;
             }
 
-            dlBtn.disabled = rstBtn.disabled = false;
             list.innerHTML = registrations.map(reg => `
                 <div class="registration-item">
                     <div style="flex: 1;">
@@ -726,72 +525,107 @@
                         <div class="text-subtle">${reg.age}Y | ${reg.gender} | ${reg.mobile}</div>
                     </div>
                     <div style="text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
-                        <button onclick="printReceipt(${reg.id})" class="btn-print">
-                            <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-2 4H8v-4h8v4z"/></svg>
-                            Print / प्रिंट
-                        </button>
+                        <button onclick="printReceipt(${reg.id || 0})" class="btn-print">Print</button>
                         <span style="font-size: 0.65rem; color: #9ca3af;">${reg.timestamp.split(',')[1]}</span>
                     </div>
                 </div>
             `).join('');
         }
 
+        // --- File & Auto-selection Logic ---
+        function initializeCustomerUpload() {
+            document.getElementById('csv-upload').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const lines = event.target.result.trim().split(/\r?\n/);
+                    preRegisteredCustomers = lines.slice(1).map((line, i) => {
+                        const v = line.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+                        return { id: i, externalRclId: v[0], empId: v[1], fullName: v[2], age: v[3], gender: v[4], mobile: v[5], email: v[6] };
+                    });
+                    const select = document.getElementById('pre-select-customer');
+                    select.innerHTML = '<option value="">-- Select Customer --</option>';
+                    preRegisteredCustomers.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = `${c.fullName} (${c.externalRclId || c.empId})`;
+                        select.appendChild(opt);
+                    });
+                    document.getElementById('customer-select-container').classList.remove('hidden');
+                    displayStatus(`Loaded ${preRegisteredCustomers.length} records.`, 'success');
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        function populateFormFromSelection() {
+            const id = document.getElementById('pre-select-customer').value;
+            const c = preRegisteredCustomers.find(x => x.id == id);
+            if (c) {
+                document.getElementById('full-name').value = c.fullName;
+                document.getElementById('age').value = c.age;
+                document.getElementById('gender').value = c.gender.toLowerCase().startsWith('m') ? 'male' : 'female';
+                document.getElementById('employee-id').value = c.empId;
+                document.getElementById('mobile-number').value = c.mobile;
+                document.getElementById('email').value = c.email;
+                document.getElementById('external-rcl-id').value = c.externalRclId;
+                document.getElementById('display-rcl-id').value = c.externalRclId || 'N/A';
+                saveDraft();
+            }
+        }
+
+        function attemptAutoSelectCustomer(type, val) {
+            if (type === 'mobile' && val.length === 10) {
+                const c = preRegisteredCustomers.find(x => x.mobile == val);
+                if (c) {
+                    document.getElementById('pre-select-customer').value = c.id;
+                    populateFormFromSelection();
+                    displayStatus(`Matched: ${c.fullName}`, 'secondary');
+                }
+            }
+        }
+
+        function toggleVitals() {
+            const container = document.getElementById('vitals-container');
+            const button = document.getElementById('vitals-toggle-btn');
+            container.classList.toggle('hidden');
+            button.textContent = container.classList.contains('hidden') ? 'Record Vitals / माप दर्ज करें' : 'Hide Vitals / माप छिपाएँ';
+        }
+
         function printReceipt(id) {
-            const reg = registrations.find(r => r.id === id);
-            if (!reg) return;
+            const reg = registrations.find(r => r.id === id) || registrations[0];
             const printArea = document.getElementById('receipt-print-area');
-            const genderHin = reg.gender === 'male' ? 'पुरुष' : (reg.gender === 'female' ? 'महिला' : 'अन्य');
-            const displayedId = reg.externalRclId && reg.externalRclId !== '' ? reg.externalRclId : reg.bookingId;
             printArea.innerHTML = `
-                <div class="receipt-header">
-                    <strong>REDCLIFFE LABS</strong><br>
-                    Registration Receipt / रसीद
-                </div>
-                <div class="receipt-id">${displayedId}</div>
-                <div class="receipt-row"><span>Name / नाम:</span> <span>${reg.fullName}</span></div>
-                <div class="receipt-row"><span>Age/Sex / उम्र/लिंग:</span> <span>${reg.age}/${genderHin}</span></div>
-                <div class="receipt-row"><span>Mobile / मोबाइल:</span> <span>${reg.mobile}</span></div>
-                <div class="receipt-row"><span>Date / तारीख:</span> <span>${reg.date}</span></div>
-                <div class="receipt-row"><span>Phlebo / फ्लेबो:</span> <span>${reg.phleboName || '--'}</span></div>
-                <div style="margin: 8px 0; border-top: 1px dashed black; padding-top: 5px; font-weight: bold;">VITALS / स्वास्थ्य माप:</div>
-                <div class="receipt-row"><span>BP / बीपी:</span> <span>${reg.vitals.bp || '--'}</span></div>
-                <div class="receipt-row"><span>Pulse / नब्ज:</span> <span>${reg.vitals.pulse || '--'}</span></div>
-                <div class="receipt-row"><span>RBS / शुगर:</span> <span>${reg.vitals.rbs || '--'}</span></div>
-                <div class="receipt-footer" style="margin-top: 20px;">
-                    Thank you / धन्यवाद<br>
-                    www.redcliffelabs.com
-                </div>
+                <div class="receipt-header"><strong>REDCLIFFE LABS</strong><br>Registration Receipt</div>
+                <div class="receipt-id">${reg.externalRclId || reg.bookingId}</div>
+                <div class="receipt-row"><span>Name:</span> <span>${reg.fullName}</span></div>
+                <div class="receipt-row"><span>Age/Sex:</span> <span>${reg.age}/${reg.gender}</span></div>
+                <div class="receipt-row"><span>Mobile:</span> <span>${reg.mobile}</span></div>
+                <div class="receipt-row"><span>Date:</span> <span>${reg.date}</span></div>
+                <div style="margin: 8px 0; border-top: 1px dashed black;"></div>
+                <div class="receipt-row"><span>BP:</span> <span>${reg.v_bp || '--'}</span></div>
+                <div class="receipt-row"><span>RBS:</span> <span>${reg.v_rbs || '--'}</span></div>
+                <div class="receipt-footer">Thank you / धन्यवाद</div>
             `;
-            printArea.style.display = 'block';
             window.print();
-            printArea.style.display = 'none';
         }
 
         function downloadCSV() {
-            const headers = ["BookingID", "ExternalRCLID", "CustomerName", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "PhleboName", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Remarks"];
-            const rows = registrations.map(r => [
-                r.bookingId, r.externalRclId || '', r.fullName, r.age, r.gender, r.empId, r.mobile, r.email, r.date, 
-                r.phleboName || '', 
-                r.vitals.height, r.vitals.weight, r.vitals.bp, r.vitals.pulse, r.vitals.spo2, r.vitals.rbs, r.remarks
-            ]);
-            const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v||''}"`).join(','))].join('\n');
+            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "Mobile", "Email", "Date", "Phlebo", "BP", "RBS"];
+            const csv = [headers.join(','), ...registrations.map(r => [r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.mobile, r.email, r.date, r.phleboName, r.v_bp, r.v_rbs].join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
+            a.href = URL.createObjectURL(blob);
             a.download = `redcliffe_export_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
         }
 
         function clearLocalData() {
-            const code = prompt("Enter security code (RCLXXXX) / डेटा हटाने के लिए कोड दर्ज करें:");
-            if (code === RESET_CODE) {
+            if (prompt("Security Code:") === RESET_CODE) {
                 localStorage.clear();
                 registrations = [];
                 updateUI();
-                displayStatus("All data cleared / सारा डेटा हटा दिया गया", "error");
-            } else if (code !== null) {
-                displayStatus("Invalid code / गलत कोड", "error");
+                displayStatus("All local data cleared.", "error");
             }
         }
     </script>
