@@ -359,7 +359,7 @@
             </form>
             
             <div class="responsive-grid-2" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; gap: 1rem;">
-                <button onclick="syncAllUnsynced()" id="sync-all-btn" class="btn-secondary span-2" style="background-color: #ecfdf5; border-color: #10b981; color: #047857;">Bulk Sync Unsynced Data / सभी अनसिंक्ड डेटा सिंक करें</button>
+                <button onclick="syncAllRecords()" id="sync-all-btn" class="btn-secondary span-2" style="background-color: #ecfdf5; border-color: #10b981; color: #047857; font-weight: bold;">Bulk Sync All Local Records / सभी स्थानीय डेटा सिंक करें</button>
                 <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download Local CSV</button>
                 <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data</button>
                 <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
@@ -376,8 +376,7 @@
 
     <script>
         // --- CONFIGURATION ---
-        // PASTE YOUR GOOGLE WEB APP URL HERE
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSLd2I0hbs10Nws5MN1I3FIGGqk-69ytXnNwhJvPmbO3V1M1GNg5Dl0p5aNZ_VUIsz/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAxmIfWqQsS15vsvsBOfbi35os70-3F6moxMrfPc4P1kJbp1Omdz0et-bdGOdZeJC7/exec"; 
 
         let registrations = [];
         let preRegisteredCustomers = [];
@@ -412,13 +411,34 @@
         async function syncRecordToCloud(entry) {
             if (!SCRIPT_URL) return false;
             try {
-                // We use no-cors for Google Apps Script web apps
+                // Mapping the entry to the flat object the Google Script expects
+                const syncData = {
+                    bookingId: entry.bookingId,
+                    timestamp: entry.timestamp,
+                    externalRclId: entry.externalRclId || "",
+                    fullName: entry.fullName,
+                    age: entry.age,
+                    gender: entry.gender,
+                    empId: entry.empId || "",
+                    mobile: entry.mobile,
+                    email: entry.email || "",
+                    date: entry.date,
+                    phleboName: entry.phleboName,
+                    remarks: entry.remarks || "",
+                    v_height: entry.v_height || "",
+                    v_weight: entry.v_weight || "",
+                    v_bp: entry.v_bp || "",
+                    v_pulse: entry.v_pulse || "",
+                    v_spo2: entry.v_spo2 || "",
+                    v_rbs: entry.v_rbs || ""
+                };
+
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     cache: 'no-cache',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(entry)
+                    body: JSON.stringify(syncData)
                 });
                 return true; 
             } catch (err) {
@@ -427,10 +447,13 @@
             }
         }
 
-        async function syncAllUnsynced() {
-            const unsynced = registrations.filter(r => !r.synced);
-            if (unsynced.length === 0) {
-                displayStatus("All records are already synced / सभी रिकॉर्ड सिंक किए गए हैं", "secondary");
+        /**
+         * Bulk Sync Logic:
+         * Iterates through ALL local records and resends them to Google Sheets.
+         */
+        async function syncAllRecords() {
+            if (registrations.length === 0) {
+                displayStatus("No local records to sync", "secondary");
                 return;
             }
 
@@ -439,20 +462,26 @@
             const originalText = syncBtn.textContent;
             
             let successCount = 0;
-            for (let i = 0; i < unsynced.length; i++) {
-                syncBtn.textContent = `Syncing (${i+1}/${unsynced.length})...`;
-                const success = await syncRecordToCloud(unsynced[i]);
+            let total = registrations.length;
+
+            for (let i = 0; i < total; i++) {
+                // Update progress on the button
+                syncBtn.textContent = `Syncing ${i + 1} of ${total}...`;
+                
+                const success = await syncRecordToCloud(registrations[i]);
                 if (success) {
-                    unsynced[i].synced = true;
+                    registrations[i].synced = true;
                     successCount++;
                 }
             }
             
+            // Save state updates locally
             save(); 
             updateUI();
+            
             syncBtn.disabled = false;
             syncBtn.textContent = originalText;
-            displayStatus(`Sync Complete! ${successCount} records uploaded.`, 'success');
+            displayStatus(`Bulk Sync Complete! ${successCount} records processed to Google Sheets.`, 'success');
         }
 
         async function handleRegistration(e) {
@@ -472,40 +501,41 @@
             
             const bookingId = `${ID_PREFIX}${nextNum}`;
             const entry = {
+                id: Date.now(),
                 bookingId,
                 timestamp: new Date().toLocaleString(),
-                externalRclId: fd.get('external-rcl-id'), 
+                externalRclId: fd.get('external-rcl-id') || "", 
                 fullName: fd.get('full-name'),
                 age: fd.get('age'),
                 gender: fd.get('gender'),
-                empId: fd.get('employee-id'),
+                empId: fd.get('employee-id') || "",
                 mobile: fd.get('mobile-number'),
-                email: fd.get('email'),
+                email: fd.get('email') || "",
                 date: fd.get('start-date'),
                 phleboName: fd.get('phlebo-name'), 
-                remarks: fd.get('remarks'),
-                v_height: fd.get('v-height'),
-                v_weight: fd.get('v-weight'),
-                v_bp: fd.get('v-bp'),
-                v_pulse: fd.get('v-pulse'),
-                v_spo2: fd.get('v-spo2'),
-                v_rbs: fd.get('v-rbs'),
-                synced: false // Initial state
+                remarks: fd.get('remarks') || "",
+                v_height: fd.get('v-height') || "",
+                v_weight: fd.get('v-weight') || "",
+                v_bp: fd.get('v-bp') || "",
+                v_pulse: fd.get('v-pulse') || "",
+                v_spo2: fd.get('v-spo2') || "",
+                v_rbs: fd.get('v-rbs') || "",
+                synced: false 
             };
 
-            // 1. Sync Attempt
+            // 1. Immediate Sync Attempt
             const cloudSuccess = await syncRecordToCloud(entry);
             if (cloudSuccess) entry.synced = true;
 
             // 2. Save locally
-            registrations.unshift({ ...entry, id: Date.now(), vitals: { bp: entry.v_bp, pulse: entry.v_pulse, rbs: entry.v_rbs } });
+            registrations.unshift(entry);
             save(nextNum + 1);
             updateUI();
 
             if (cloudSuccess) {
                 displayStatus(`Registered & Synced: ${bookingId}`, 'success');
             } else {
-                displayStatus(`Registered Locally: ${bookingId} (Cloud Sync failed, please bulk sync later)`, 'error');
+                displayStatus(`Registered Locally: ${bookingId} (Cloud Sync failed, please click Bulk Sync later)`, 'error');
             }
 
             clearFormFields(false, true);
@@ -513,7 +543,7 @@
             submitBtn.textContent = "Register & Sync";
         }
 
-        // --- Storage Helpers ---
+        // --- Storage & UI ---
         function saveDraft() {
             const draft = {};
             document.querySelectorAll('.persist').forEach(input => draft[input.id] = input.value);
@@ -571,7 +601,7 @@
             document.getElementById('expiration-info').textContent = `Local records: ${registrations.length}`;
 
             if (registrations.length === 0) {
-                list.innerHTML = '<p class="text-subtle italic text-center py-4">No data found</p>';
+                list.innerHTML = '<p class="text-subtle italic text-center py-4">No local data found</p>';
                 return;
             }
 
@@ -582,18 +612,18 @@
                         <div style="font-weight: bold; margin: 2px 0;">${reg.fullName}</div>
                         <div class="text-subtle">${reg.age}Y | ${reg.gender} | ${reg.mobile}</div>
                         <span class="badge ${reg.synced ? 'badge-success' : 'badge-pending'}">
-                            ${reg.synced ? '✓ Synced' : '⚠ Pending Sync'}
+                            ${reg.synced ? '✓ Synced to Cloud' : '⚠ Local Only (Pending Sync)'}
                         </span>
                     </div>
                     <div style="text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
-                        <button onclick="printReceipt(${reg.id || 0})" class="btn-print">Print</button>
+                        <button onclick="printReceipt(${reg.id})" class="btn-print">Print</button>
                         <span style="font-size: 0.65rem; color: #9ca3af;">${reg.timestamp.split(',')[1] || ''}</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- File & Interaction ---
+        // --- CSV & File Loading ---
         function initializeCustomerUpload() {
             document.getElementById('csv-upload').addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -656,15 +686,17 @@
         function printReceipt(id) {
             const reg = registrations.find(r => r.id === id) || registrations[0];
             const printArea = document.getElementById('receipt-print-area');
+            const genderHin = reg.gender === 'male' ? 'पुरुष' : (reg.gender === 'female' ? 'महिला' : 'अन्य');
             printArea.innerHTML = `
                 <div class="receipt-header"><strong>REDCLIFFE LABS</strong><br>Registration Receipt</div>
                 <div class="receipt-id">${reg.externalRclId || reg.bookingId}</div>
                 <div class="receipt-row"><span>Name:</span> <span>${reg.fullName}</span></div>
-                <div class="receipt-row"><span>Age/Sex:</span> <span>${reg.age}/${reg.gender}</span></div>
+                <div class="receipt-row"><span>Age/Sex:</span> <span>${reg.age}/${genderHin}</span></div>
                 <div class="receipt-row"><span>Mobile:</span> <span>${reg.mobile}</span></div>
                 <div class="receipt-row"><span>Date:</span> <span>${reg.date}</span></div>
-                <div style="margin: 8px 0; border-top: 1px dashed black;"></div>
+                <div style="margin: 8px 0; border-top: 1px dashed black; padding-top: 5px; font-weight: bold;">VITALS:</div>
                 <div class="receipt-row"><span>BP:</span> <span>${reg.v_bp || '--'}</span></div>
+                <div class="receipt-row"><span>Pulse:</span> <span>${reg.v_pulse || '--'}</span></div>
                 <div class="receipt-row"><span>RBS:</span> <span>${reg.v_rbs || '--'}</span></div>
                 <div class="receipt-footer">Thank you / धन्यवाद</div>
             `;
@@ -672,8 +704,26 @@
         }
 
         function downloadCSV() {
-            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "Mobile", "Email", "Date", "Phlebo", "BP", "RBS", "Synced"];
-            const csv = [headers.join(','), ...registrations.map(r => [r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.mobile, r.email, r.date, r.phleboName, r.v_bp, r.v_rbs, r.synced].join(','))].join('\n');
+            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "Phlebo", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Synced"];
+            const csv = [headers.join(','), ...registrations.map(r => [
+                r.bookingId, 
+                r.externalRclId, 
+                r.fullName, 
+                r.age, 
+                r.gender, 
+                r.empId,
+                r.mobile, 
+                r.email, 
+                r.date, 
+                r.phleboName, 
+                r.v_height,
+                r.v_weight,
+                r.v_bp, 
+                r.v_pulse,
+                r.v_spo2,
+                r.v_rbs, 
+                r.synced
+            ].join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
