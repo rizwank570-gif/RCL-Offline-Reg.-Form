@@ -360,6 +360,7 @@
             
             <div class="responsive-grid-2" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; gap: 1rem;">
                 <button onclick="syncAllRecords()" id="sync-all-btn" class="btn-secondary span-2" style="background-color: #ecfdf5; border-color: #10b981; color: #047857; font-weight: bold;">Bulk Sync All Local Records / सभी स्थानीय डेटा सिंक करें</button>
+                <button onclick="unsyncAllRecords()" id="unsync-all-btn" class="btn-secondary span-2" style="background-color: #fffbeb; border-color: #f59e0b; color: #b45309;">Unsync All Records / सभी डेटा अनसिंक करें</button>
                 <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download Local CSV</button>
                 <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data</button>
                 <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
@@ -482,6 +483,28 @@
             syncBtn.disabled = false;
             syncBtn.textContent = originalText;
             displayStatus(`Bulk Sync Complete! ${successCount} records processed to Google Sheets.`, 'success');
+        }
+
+        /**
+         * Unsync All Logic:
+         * Resets the synced status of all records so they can be re-synced.
+         */
+        function unsyncAllRecords() {
+            if (registrations.length === 0) {
+                displayStatus("No records found to unsync / अनसिंक करने के लिए कोई रिकॉर्ड नहीं मिला", "secondary");
+                return;
+            }
+
+            const confirmUnsync = confirm("This will mark all local records as 'Not Synced'. This is useful if you want to resend all data to the Google Sheet. Continue? / यह सभी रिकॉर्ड्स को 'अनसिंक्ड' के रूप में चिह्नित करेगा। क्या आप जारी रखना चाहते हैं?");
+            
+            if (confirmUnsync) {
+                registrations.forEach(reg => {
+                    reg.synced = false;
+                });
+                save();
+                updateUI();
+                displayStatus("All records marked as Pending Sync. You can now use Bulk Sync to re-upload everything.", "secondary");
+            }
         }
 
         async function handleRegistration(e) {
