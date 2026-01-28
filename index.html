@@ -152,7 +152,8 @@
             font-weight: 600;
             transition: background 0.2s;
         }
-        .btn-secondary:hover { background-color: #e5e7eb; } 
+        .btn-secondary:hover:not(:disabled) { background-color: #e5e7eb; } 
+        .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .btn-reset { background-color: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; }
         
@@ -180,6 +181,18 @@
             display: flex;
             justify-content: space-between;
         }
+
+        /* Badge Styling */
+        .badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-pending { background: #fef9c3; color: #854d0e; }
 
         /* Receipt View */
         #receipt-print-area {
@@ -341,11 +354,12 @@
 
                 <div class="responsive-grid-2" style="margin-top: 2rem; gap: 1rem;">
                     <button type="button" class="btn-secondary" onclick="clearFormFields(true, true)">Clear Form / फॉर्म साफ करें</button>
-                    <button type="submit" id="submit-btn" class="btn-primary">Register & Sync to Sheets / पंजीकरण और सिंक</button>
+                    <button type="submit" id="submit-btn" class="btn-primary">Register & Sync / पंजीकरण और सिंक</button>
                 </div>
             </form>
             
             <div class="responsive-grid-2" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; gap: 1rem;">
+                <button onclick="syncAllUnsynced()" id="sync-all-btn" class="btn-secondary span-2" style="background-color: #ecfdf5; border-color: #10b981; color: #047857;">Bulk Sync Unsynced Data / सभी अनसिंक्ड डेटा सिंक करें</button>
                 <button onclick="downloadCSV()" id="download-csv-btn" disabled class="btn-secondary">Download Local CSV</button>
                 <button onclick="clearLocalData()" id="clear-data-btn" disabled class="btn-reset">Reset All Data</button>
                 <p id="expiration-info" class="span-2" style="text-align: center; font-size: 0.7rem; color: #9ca3af;"></p>
@@ -394,11 +408,58 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // --- Sync Helper ---
+        async function syncRecordToCloud(entry) {
+            if (!SCRIPT_URL) return false;
+            try {
+                // We use no-cors for Google Apps Script web apps
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(entry)
+                });
+                return true; 
+            } catch (err) {
+                console.error("Sync error:", err);
+                return false;
+            }
+        }
+
+        async function syncAllUnsynced() {
+            const unsynced = registrations.filter(r => !r.synced);
+            if (unsynced.length === 0) {
+                displayStatus("All records are already synced / सभी रिकॉर्ड सिंक किए गए हैं", "secondary");
+                return;
+            }
+
+            const syncBtn = document.getElementById('sync-all-btn');
+            syncBtn.disabled = true;
+            const originalText = syncBtn.textContent;
+            
+            let successCount = 0;
+            for (let i = 0; i < unsynced.length; i++) {
+                syncBtn.textContent = `Syncing (${i+1}/${unsynced.length})...`;
+                const success = await syncRecordToCloud(unsynced[i]);
+                if (success) {
+                    unsynced[i].synced = true;
+                    successCount++;
+                }
+            }
+            
+            save(); 
+            updateUI();
+            syncBtn.disabled = false;
+            syncBtn.textContent = originalText;
+            displayStatus(`Sync Complete! ${successCount} records uploaded.`, 'success');
+        }
+
         async function handleRegistration(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = true;
-            submitBtn.textContent = "Syncing with Cloud...";
+            submitBtn.textContent = "Syncing...";
 
             const form = e.target;
             const fd = new FormData(form);
@@ -428,39 +489,31 @@
                 v_bp: fd.get('v-bp'),
                 v_pulse: fd.get('v-pulse'),
                 v_spo2: fd.get('v-spo2'),
-                v_rbs: fd.get('v-rbs')
+                v_rbs: fd.get('v-rbs'),
+                synced: false // Initial state
             };
 
-            // 1. Save Locally as backup
+            // 1. Sync Attempt
+            const cloudSuccess = await syncRecordToCloud(entry);
+            if (cloudSuccess) entry.synced = true;
+
+            // 2. Save locally
             registrations.unshift({ ...entry, id: Date.now(), vitals: { bp: entry.v_bp, pulse: entry.v_pulse, rbs: entry.v_rbs } });
             save(nextNum + 1);
             updateUI();
 
-            // 2. Sync to Google Sheets
-            if (SCRIPT_URL) {
-                try {
-                    const response = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors', // standard for GAS web apps
-                        cache: 'no-cache',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(entry)
-                    });
-                    displayStatus(`Success! Registered locally and synced to Google Sheets. ID: ${bookingId}`, 'success');
-                } catch (err) {
-                    console.error(err);
-                    displayStatus(`Saved locally, but Cloud Sync failed. Please download CSV later.`, 'error');
-                }
+            if (cloudSuccess) {
+                displayStatus(`Registered & Synced: ${bookingId}`, 'success');
             } else {
-                displayStatus(`Registered locally: ${bookingId}. (Cloud Sync not configured)`, 'secondary');
+                displayStatus(`Registered Locally: ${bookingId} (Cloud Sync failed, please bulk sync later)`, 'error');
             }
 
             clearFormFields(false, true);
             submitBtn.disabled = false;
-            submitBtn.textContent = "Register & Sync to Sheets";
+            submitBtn.textContent = "Register & Sync";
         }
 
-        // --- Core Helper Functions ---
+        // --- Storage Helpers ---
         function saveDraft() {
             const draft = {};
             document.querySelectorAll('.persist').forEach(input => draft[input.id] = input.value);
@@ -492,9 +545,14 @@
         }
 
         function save(nextNumOverride) {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            let nextNum = nextNumOverride;
+            if (raw && !nextNumOverride) {
+                nextNum = JSON.parse(raw).nextNum;
+            }
             localStorage.setItem(STORAGE_KEY, JSON.stringify({
                 data: registrations,
-                nextNum: nextNumOverride || STARTING_NUM
+                nextNum: nextNum || STARTING_NUM
             }));
         }
 
@@ -523,16 +581,19 @@
                         <div style="font-weight: 800; color: var(--color-primary); font-size: 0.8rem;">${reg.externalRclId || reg.bookingId}</div>
                         <div style="font-weight: bold; margin: 2px 0;">${reg.fullName}</div>
                         <div class="text-subtle">${reg.age}Y | ${reg.gender} | ${reg.mobile}</div>
+                        <span class="badge ${reg.synced ? 'badge-success' : 'badge-pending'}">
+                            ${reg.synced ? '✓ Synced' : '⚠ Pending Sync'}
+                        </span>
                     </div>
                     <div style="text-align: right; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
                         <button onclick="printReceipt(${reg.id || 0})" class="btn-print">Print</button>
-                        <span style="font-size: 0.65rem; color: #9ca3af;">${reg.timestamp.split(',')[1]}</span>
+                        <span style="font-size: 0.65rem; color: #9ca3af;">${reg.timestamp.split(',')[1] || ''}</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // --- File & Auto-selection Logic ---
+        // --- File & Interaction ---
         function initializeCustomerUpload() {
             document.getElementById('csv-upload').addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -611,8 +672,8 @@
         }
 
         function downloadCSV() {
-            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "Mobile", "Email", "Date", "Phlebo", "BP", "RBS"];
-            const csv = [headers.join(','), ...registrations.map(r => [r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.mobile, r.email, r.date, r.phleboName, r.v_bp, r.v_rbs].join(','))].join('\n');
+            const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "Mobile", "Email", "Date", "Phlebo", "BP", "RBS", "Synced"];
+            const csv = [headers.join(','), ...registrations.map(r => [r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.mobile, r.email, r.date, r.phleboName, r.v_bp, r.v_rbs, r.synced].join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
