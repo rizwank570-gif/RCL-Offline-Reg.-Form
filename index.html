@@ -409,6 +409,23 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        /**
+         * Safe helper to get vital values from either flat or nested structure
+         * Supports backward compatibility for data already in local storage.
+         */
+        function getVitalValue(reg, key) {
+            // Priority 1: Check standard flat key (e.g., reg.v_bp)
+            if (reg[key] !== undefined && reg[key] !== null && reg[key] !== "") {
+                return reg[key];
+            }
+            // Priority 2: Check nested vitals object (e.g., reg.vitals.bp)
+            const oldKey = key.replace('v_', '');
+            if (reg.vitals && reg.vitals[oldKey] !== undefined && reg.vitals[oldKey] !== null) {
+                return reg.vitals[oldKey];
+            }
+            return "";
+        }
+
         // --- Sync Helper ---
         async function syncRecordToCloud(entry) {
             if (!SCRIPT_URL) return false;
@@ -426,12 +443,12 @@
                     date: entry.date,
                     phleboName: entry.phleboName,
                     remarks: entry.remarks || "",
-                    v_height: entry.v_height || "",
-                    v_weight: entry.v_weight || "",
-                    v_bp: entry.v_bp || "",
-                    v_pulse: entry.v_pulse || "",
-                    v_spo2: entry.v_spo2 || "",
-                    v_rbs: entry.v_rbs || ""
+                    v_height: getVitalValue(entry, 'v_height'),
+                    v_weight: getVitalValue(entry, 'v_weight'),
+                    v_bp: getVitalValue(entry, 'v_bp'),
+                    v_pulse: getVitalValue(entry, 'v_pulse'),
+                    v_spo2: getVitalValue(entry, 'v_spo2'),
+                    v_rbs: getVitalValue(entry, 'v_rbs')
                 };
 
                 await fetch(SCRIPT_URL, {
@@ -591,12 +608,27 @@
             `).join('');
         }
 
-        // --- CSV Functions Optimized for Restricted Mobile Browsers (Vidmate) ---
+        // --- CSV Functions Optimized for Vidmate / Restricted Mobile Browsers ---
         function generateCSVString() {
             const headers = ["BookingID", "ExternalID", "Name", "Age", "Gender", "EmpID", "Mobile", "Email", "Date", "Phlebo", "Height", "Weight", "BP", "Pulse", "SpO2", "RBS", "Synced"];
             const csvRows = registrations.map(r => [
-                r.bookingId, r.externalRclId, r.fullName, r.age, r.gender, r.empId, r.mobile, r.email, r.date, r.phleboName, 
-                r.v_height, r.v_weight, r.v_bp, r.v_pulse, r.v_spo2, r.v_rbs, r.synced
+                r.bookingId, 
+                r.externalRclId, 
+                r.fullName, 
+                r.age, 
+                r.gender, 
+                r.empId, 
+                r.mobile, 
+                r.email, 
+                r.date, 
+                r.phleboName, 
+                getVitalValue(r, 'v_height'), 
+                getVitalValue(r, 'v_weight'), 
+                getVitalValue(r, 'v_bp'), 
+                getVitalValue(r, 'v_pulse'), 
+                getVitalValue(r, 'v_spo2'), 
+                getVitalValue(r, 'v_rbs'), 
+                r.synced
             ].map(v => `"${(v||'').toString().replace(/"/g, '""')}"`).join(','));
             return [headers.join(','), ...csvRows].join('\n');
         }
@@ -605,28 +637,25 @@
             const csvContent = generateCSVString();
             const fileName = `redcliffe_export_${new Date().toISOString().split('T')[0]}.csv`;
             
-            // Standard approach first
             try {
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                
                 if (navigator.msSaveBlob) { 
                     navigator.msSaveBlob(blob, fileName);
                 } else {
                     const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
                     link.setAttribute("href", url);
                     link.setAttribute("download", fileName);
                     link.style.display = 'none';
                     document.body.appendChild(link);
                     link.click();
-                    // Small delay before cleanup for mobile browsers
                     setTimeout(() => {
                         document.body.removeChild(link);
                         URL.revokeObjectURL(url);
                     }, 200);
                 }
             } catch (e) {
-                // Fallback for browsers like Vidmate that block Blob downloads
+                // Fallback Data URI approach
                 const encodedUri = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
@@ -640,14 +669,28 @@
         function copyCSVToClipboard() {
             const csvContent = generateCSVString();
             const textArea = document.createElement("textarea");
+            
+            // Set styles to make it "invisible" but functional for copy
             textArea.value = csvContent;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            textArea.style.top = "0";
             document.body.appendChild(textArea);
+            
+            textArea.focus();
             textArea.select();
+            textArea.setSelectionRange(0, 999999); // Force selection for mobile
+            
             try {
-                document.execCommand('copy');
-                displayStatus("Data copied to clipboard! Paste it into a file or email. / डेटा कॉपी हो गया!", "success");
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    displayStatus("Data copied to clipboard! Paste it into a file or email.", "success");
+                } else {
+                    throw new Error("unsuccessful");
+                }
             } catch (err) {
-                displayStatus("Failed to copy. Please use the download button instead.", "error");
+                console.error('Clipboard copy error:', err);
+                displayStatus("Copy failed. Try the download button.", "error");
             }
             document.body.removeChild(textArea);
         }
@@ -724,9 +767,9 @@
                 <div class="receipt-row"><span>Mobile:</span> <span>${reg.mobile}</span></div>
                 <div class="receipt-row"><span>Date:</span> <span>${reg.date}</span></div>
                 <div style="margin: 8px 0; border-top: 1px dashed black; padding-top: 5px; font-weight: bold;">VITALS:</div>
-                <div class="receipt-row"><span>BP:</span> <span>${reg.v_bp || '--'}</span></div>
-                <div class="receipt-row"><span>Pulse:</span> <span>${reg.v_pulse || '--'}</span></div>
-                <div class="receipt-row"><span>RBS:</span> <span>${reg.v_rbs || '--'}</span></div>
+                <div class="receipt-row"><span>BP:</span> <span>${getVitalValue(reg, 'v_bp') || '--'}</span></div>
+                <div class="receipt-row"><span>Pulse:</span> <span>${getVitalValue(reg, 'v_pulse') || '--'}</span></div>
+                <div class="receipt-row"><span>RBS:</span> <span>${getVitalValue(reg, 'v_rbs') || '--'}</span></div>
                 <div class="receipt-footer">Thank you / धन्यवाद</div>
             `;
             window.print();
